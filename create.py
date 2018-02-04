@@ -11,6 +11,11 @@ def main(args):
 				pass
 		with db.cursor() as cur:
 			try:
+				cur.execute("DROP TABLE `round`")
+			except:
+				pass
+		with db.cursor() as cur:
+			try:
 				cur.execute("DROP TABLE `seatings`")
 			except:
 				pass
@@ -19,8 +24,12 @@ def main(args):
 				cur.execute("DROP TABLE `pairings`")
 			except:
 				pass
+	with DeckDB() as db:
 		with db.cursor() as cur:
-			cur.execute("CREATE TABLE `players` (playerid INT PRIMARY KEY, name VARCHAR(100))")
+			cur.execute("CREATE TABLE `round` (roundnum INT)")
+			cur.execute("INSERT INTO `round` (roundnum) values (0)")
+		with db.cursor() as cur:
+			cur.execute("CREATE TABLE `players` (playerid INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100), country VARCHAR(100), UNIQUE KEY player_key (name, country))")
 		with db.cursor() as cur:
 			cur.execute("CREATE TABLE `seatings` (playerid INT UNIQUE, buildtable INT, INDEX ididx(playerid), CONSTRAINT fkidseat FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE)")
 		with db.cursor() as cur:

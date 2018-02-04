@@ -7,12 +7,15 @@ output = None
 
 def print_table(tablenumber):
 
-	with DeckDB() as db:
-		(player1, player2) = db.get_table(tablenumber)
+	try:
+		with DeckDB() as db:
+			(player1, player2) = db.get_table(tablenumber)
 
-	with output.table("Name", "Score", "Build Table"):
-		output.printPlayer(player1)
-		output.printPlayer(player2)
+		with output.table("Name", "Score", "Current Table", "Build Table"):
+			output.printPlayer(player1)
+			output.printPlayer(player2)
+	except Exception as e:
+		output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
 
 def docgi():
 	print """Content-type: text/html
@@ -22,6 +25,12 @@ def docgi():
 		<body>
 			<h1>Deck Checks</h1>
 """
+	try:
+		with DeckDB() as db:
+			roundnum = db.get_round()
+			output.printMessage("Current round is %s" % roundnum)
+	except Exception as e:
+		output.printMessage("Failed to get round number: %s" % e)
 	form = cgi.FieldStorage()
 	if "table" in form:
 		print_table(int(form["table"].value))

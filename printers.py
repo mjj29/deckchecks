@@ -6,11 +6,11 @@ class NullTable:
 
 class TextOutput:
 	def printPlayer(self, player):
-		(name, score, build) = player
+		(name, score, table, build) = player
 		if 0 == build:
-			print "%s (%s) had byes" % (name, score)
+			print "%s (%s points, currently at %s) had byes" % (name, score, table)
 		else:
-			print "%s (%s) build table %s" % (name, score, build)
+			print "%s (%s points, currently at %s) build table %s" % (name, score, table, build)
 
 	def printMessage(self, message):
 		print str(message)
@@ -36,9 +36,10 @@ class HTMLOutput:
 	def table(self, *args):
 		return HTMLTable(*args)
 	def printPlayer(self, player):
-		(name, score, build) = player
+		(name, score, table, build) = player
 		if 0 == build: build = "bye"
-		print "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (name, score, build)
+		print "<tr><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td></tr>" % (name, score, table, build)
 
 	def printMessage(self, message):
 		print "<p>%s</p>" % message
+
