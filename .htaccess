@@ -1,3 +1,6 @@
 AddHandler cgi-script .py
 Options +ExecCGI
-DirectoryIndex index.html
+DirectoryIndex index.py
+
+RewriteEngine On
+RewriteRule (.*)/(.*)$ /projects.git/mtg/deckchecks/$2.py?event=$1 [L,QSA]

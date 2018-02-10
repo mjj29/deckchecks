@@ -5,20 +5,25 @@ from printers import TextOutput, HTMLOutput
 
 output = None
 
-def print_table(tournament, tablenumber):
+def top_tables(tournament):
 
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			(player1, player2) = db.get_table(id, tablenumber)
+			tables = db.get_top_tables()
+			with output.table("Table", "Score", "Name", "Previous Checks", "Name", "Previous Checks") as table:
+				for row in tables:
+					score = row[0]
+					tablenum = row[1]
+					(player1, player2) = db.get_table(id, tablenum)
+					(name1, _, _, _) = player1
+					(name2, _, _, _) = player2
+					prevChecks1 = db.getPreviousChecks(id, name1)
+					prevChecks2 = db.getPreviousChecks(id, name2)
+					table.printRow(tablenum, score, name1, ", ".join([str(x) for x in prevChecks1]), name2, ", ".join([str(x) for x in prevChecks2]))
 
-			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks"):
-				output.printPlayer(player1, db, id)
-				output.printPlayer(player2, db, id)
-		
-		output.printLink("deckcheck?table=%s" % tablenumber, "Mark as checked")
 	except Exception as e:
-		output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
+		output.printMessage("Failed to print top tables: %s" % (e))
 
 def docgi():
 	print """Content-type: text/html
@@ -39,15 +44,7 @@ def docgi():
 			output.printMessage("Current round is %s" % roundnum)
 	except Exception as e:
 		output.printMessage("Failed to get round number: %s" % e)
-	if "table" in form:
-		print_table(form["event"].value, int(form["table"].value))
-	else:
-		print """
-<form>
-	Enter table number: <input type='text' name='table' /><input type='submit' />
-</form>
-"""
-
+	top_tables(form["event"].value)
 	print """
 		</body>
 	</html>
@@ -56,7 +53,7 @@ def docgi():
 def main(args):
 	with DeckDB() as db:
 		db.checkEvent(args[0], output)
-	print_table(args[0], args[1])
+	top_tables(args[0])
 
 if __name__ == "__main__":
 
@@ -65,8 +62,8 @@ if __name__ == "__main__":
 		output = HTMLOutput()
 		docgi()
 	else:
-		if len(sys.argv) < 3:
-			print "Usage: get_table.py <event> <table number>"
+		if len(sys.argv) < 2:
+			print "Usage: top_tables.py <event>"
 			sys.exit(1)
 		
 		output = TextOutput()

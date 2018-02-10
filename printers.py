@@ -3,20 +3,32 @@ class NullTable:
 		return self
 	def __exit__(self, *args, **kwargs):
 		pass
+	def printRow(self, *args):
+		print ", ".join([str(x) for x in args])
 
 class TextOutput:
-	def printPlayer(self, player):
+	def printPlayer(self, player, db, eventid):
 		(name, score, table, build) = player
 		if 0 == build:
 			print "%s (%s points, currently at %s) had byes" % (name, score, table)
 		else:
 			print "%s (%s points, currently at %s) build table %s" % (name, score, table, build)
 
+		prevChecks = db.getPreviousChecks(eventid, name)
+
+		if 0 == len(prevChecks):
+			print "%s has not previously been checked" % name
+		else:
+			print "%s was checked in rounds %s" % (name, ", ".join([str(x) for x in prevChecks]))
+
 	def printMessage(self, message):
 		print str(message)
 	
 	def table(self, *args):
 		return NullTable()
+
+	def printLink(self, link, text):
+		pass
 
 class HTMLTable:
 	def __init__(self, *args):
@@ -30,16 +42,25 @@ class HTMLTable:
 		return self
 	def __exit__(self, *args, **kwargs):
 		print "</table>"
+	def printRow(self, *args):
+		print "<tr>"
+		for a in args:
+			print "<td>%s</td>" % a
+		print "</tr>"
 
 
 class HTMLOutput:
 	def table(self, *args):
 		return HTMLTable(*args)
-	def printPlayer(self, player):
+	def printPlayer(self, player, db, eventid):
 		(name, score, table, build) = player
 		if 0 == build: build = "bye"
-		print "<tr><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td></tr>" % (name, score, table, build)
+
+		prevChecks = db.getPreviousChecks(eventid, name)
+		print "<tr><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td><td>%s</td></tr>" % (name, score, table, build, ", ".join([str(x) for x in prevChecks]))
 
 	def printMessage(self, message):
 		print "<p>%s</p>" % message
 
+	def printLink(self, link, text):
+		print "<p><a href='%s'>%s</a></p>" % (link, text)

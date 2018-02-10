@@ -3,37 +3,32 @@ from deck_mysql import DeckDB
 import sys
 
 def main(args):
+	tables = [ 
+		('tournaments', ['CREATE table `tournaments` (tournamentid INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100) UNIQUE)']),
+		("players", ["CREATE TABLE `players` (playerid INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100), country VARCHAR(100), tournamentid INT, CONSTRAINT fkidtourp FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE, UNIQUE KEY player_key (tournamentid, name, country))"]),
+		('round', ["CREATE TABLE `round` (roundnum INT, tournamentid INT, CONSTRAINT fkidtourr FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
+		('seatings', ["CREATE TABLE `seatings` (playerid INT UNIQUE, buildtable INT, tournamentid INT, INDEX ididx(playerid), CONSTRAINT fkidseat FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtours FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
+		('pairings', ["CREATE TABLE `pairings` (playerid INT UNIQUE, score INT, tablenum INT, tournamentid INT, INDEX ididx(playerid), CONSTRAINT fkidpair FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtoura FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
+		('deckchecks', ["CREATE TABLE `deckchecks` (playerid INT UNIQUE, tournamentid INT, round INT, INDEX ididx(playerid), CONSTRAINT fkiddeck FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtourd FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
+	]
 	with DeckDB() as db:
-		with db.cursor() as cur:
-			try:
-				cur.execute("DROP TABLE `players`")
-			except:
-				pass
-		with db.cursor() as cur:
-			try:
-				cur.execute("DROP TABLE `round`")
-			except:
-				pass
-		with db.cursor() as cur:
-			try:
-				cur.execute("DROP TABLE `seatings`")
-			except:
-				pass
-		with db.cursor() as cur:
-			try:
-				cur.execute("DROP TABLE `pairings`")
-			except:
-				pass
+		for (t, _) in reversed(tables):
+			with db.cursor() as cur:
+				try:
+					print "DROP TABLE `%s`" % t
+					cur.execute("DROP TABLE `%s`" % t)
+				except:
+					pass
+		db.commit()
 	with DeckDB() as db:
-		with db.cursor() as cur:
-			cur.execute("CREATE TABLE `round` (roundnum INT)")
-			cur.execute("INSERT INTO `round` (roundnum) values (0)")
-		with db.cursor() as cur:
-			cur.execute("CREATE TABLE `players` (playerid INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100), country VARCHAR(100), UNIQUE KEY player_key (name, country))")
-		with db.cursor() as cur:
-			cur.execute("CREATE TABLE `seatings` (playerid INT UNIQUE, buildtable INT, INDEX ididx(playerid), CONSTRAINT fkidseat FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE)")
-		with db.cursor() as cur:
-			cur.execute("CREATE TABLE `pairings` (playerid INT UNIQUE, score INT, tablenum INT, INDEX ididx(playerid), CONSTRAINT fkidpair FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE)")
+		for (_, queries) in tables:
+				for q in queries:
+					with db.cursor() as cur:
+						try:
+							print q
+							cur.execute(q)
+						except:
+							pass
 		db.commit()
 
 if __name__ == "__main__":

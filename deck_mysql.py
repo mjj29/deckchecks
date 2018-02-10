@@ -1,4 +1,4 @@
-import MySQLdb
+import MySQLdb, sys
 
 class DeckCursor:
 	def __init__(self, cur):
@@ -14,10 +14,12 @@ class DeckDB:
 	user = 'deckchecks'
 	password = 'Sans1orbia'
 	schema = {
-		'pairings':['playerid', 'score', 'tablenum'],
-		'seatings':['playerid', 'buildtable'],
-		'players':['name', 'country'],
-		'round':['roundnum'],
+		'pairings':['playerid', 'score', 'tablenum', 'tournamentid'],
+		'seatings':['playerid', 'buildtable', 'tournamentid'],
+		'players':['name', 'country', 'tournamentid'],
+		'deckchecks':['playerid', 'tournamentid', 'round'],
+		'round':['roundnum', 'tournamentid'],
+		'tournaments':['name'],
 	}
 
 	def __init__(self):
@@ -35,11 +37,22 @@ class DeckDB:
 
 	def cursor(self):
 		return DeckCursor(self.db.cursor())
+
+	def checkEvent(self, event, output):
+		try:
+			id = self.getEventId(event)
+		except:
+			output.printMessage("Unknown event %s" % event)
+			sys.exit(0)
 	
 	def find(self, table, search):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT * FROM "+table+" WHERE "+(" AND ".join([x+'="'+search[x]+'"' for x in search.keys()])))
+			cur.execute("SELECT * FROM "+table+" WHERE "+(" AND ".join([x+'="'+str(search[x])+'"' for x in search.keys()])))
 			return cur.fetchall()[0]
+		
+	def deleteRow(self, table, search):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("DELETE FROM "+table+" WHERE "+(" AND ".join([x+'="'+str(search[x])+'"' for x in search.keys()])))
 		
 	def clearTable(self, table):
 		with DeckCursor(self.db.cursor()) as cur:
@@ -52,25 +65,53 @@ class DeckDB:
 			cur.execute("INSERT INTO %s (%s) VALUES (%s)" % (table, ",".join(self.schema[table]), ",".join(["%s" for x in data])), data)
 			self.db.commit()
 
-	def get_round(self):
+	def get_round(self, tournamentid):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT * FROM round")
+			cur.execute("SELECT * FROM round WHERE tournamentid=%s", tournamentid)
 			rows = cur.fetchall()
 			return int(rows[0][0])
 
-
-	def get_table(self, tablenum):
+	def getEventId(self, event):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE tablenum=%s", tablenum)
+			cur.execute("SELECT tournamentid FROM tournaments WHERE name=%s", event)
+			rows = cur.fetchall()
+			return int(rows[0][0])
+
+	def get_events(self):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name FROM tournaments")
+			return cur.fetchall()
+
+	def get_top_tables(self):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT score, tablenum FROM pairings GROUP BY tablenum ORDER BY score DESC, tablenum LIMIT 100")
+			return cur.fetchall()
+
+
+	def get_table(self, tournamentid, tablenum):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE tablenum=%s AND players.tournamentid=%s", (tablenum, tournamentid))
 			rows = cur.fetchall()
 			return ((rows[0][0], rows[0][1], rows[0][2], rows[0][3]), (rows[1][0], rows[1][1], rows[1][2], rows[1][3]))
 
-	def get_players(self, name):
+	def get_table_ids(self, tournamentid, tablenum):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE name COLLATE LATIN1_GENERAL_CI  LIKE %s", '%'+name+'%')
+			cur.execute("SELECT players.playerid FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE tablenum=%s AND players.tournamentid=%s", (tablenum, tournamentid))
+			rows = cur.fetchall()
+			return (rows[0][0], rows[1][0])
+
+
+	def get_players(self, tournamentid, name):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE name COLLATE LATIN1_GENERAL_CI  LIKE %s AND players.tournamentid=%s", ('%'+name+'%', tournamentid))
 			rows = cur.fetchall()
 			return [(row[0], row[1], row[2], row[3]) for row in rows]
 
+	def getPreviousChecks(self, tournamentid, name):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT deckchecks.round FROM deckchecks INNER JOIN players on deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s AND players.name=%s", (tournamentid, name))
+			rows = cur.fetchall()
+			return [row[0] for row in rows]
 
 
 
