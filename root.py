@@ -21,6 +21,8 @@ print """
 <h2><a href='get_table'>Lookup by table</a></h2>
 <h2><a href='get_player'>Lookup by player</a></h2>
 <h2><a href='top_tables'>Check top tables</a></h2>
+<h2><a href='recommend'>Recommend checks</a></h2>
+<h2><a href='allchecks'>See all checks</a></h2>
 <h2><a href='import'>Import data</a></h2>
 </body>
 </html>

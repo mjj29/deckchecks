@@ -1,4 +1,4 @@
-import MySQLdb, sys
+import MySQLdb, sys, random
 
 class DeckCursor:
 	def __init__(self, cur):
@@ -82,10 +82,48 @@ class DeckDB:
 			cur.execute("SELECT name FROM tournaments")
 			return cur.fetchall()
 
+	def get_all_checks(self, event):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT round, name FROM deckchecks INNER JOIN players ON deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s ORDER BY round", event)
+			rows = cur.fetchall()
+			currentround = 0
+			checks = {}
+			for row in rows:
+				if row[0] != currentround:
+					currentround = row[0]
+					checks[currentround] = []
+				checks[currentround].append(row[1])
+		return checks
+
+
 	def get_top_tables(self):
 		with DeckCursor(self.db.cursor()) as cur:
 			cur.execute("SELECT score, tablenum FROM pairings GROUP BY tablenum ORDER BY score DESC, tablenum LIMIT 100")
 			return cur.fetchall()
+
+	def get_recommendations(self, tournamentid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE players.tournamentid=%s ORDER BY tablenum", (tournamentid))
+			rows = cur.fetchall()
+			tables = {}
+			for r in rows:
+				try:
+					l = tables.get(r[2], list())
+					l.append((r[0], r[1], r[2], r[3]))
+					tables[r[2]] = l
+				except:
+					pass
+
+			rv = []
+			for i in range(0, 6):
+				k = random.choice(tables.keys())
+				try:
+					rv.append((k, tables[k][0], tables[k][1]))
+				except:
+					pass
+
+			return rv
+
 
 
 	def get_table(self, tournamentid, tablenum):

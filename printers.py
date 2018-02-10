@@ -23,6 +23,10 @@ class TextOutput:
 
 	def printMessage(self, message):
 		print str(message)
+
+	def heading(self, text):
+		print text
+		print "----------------"
 	
 	def table(self, *args):
 		return NullTable()
@@ -37,7 +41,7 @@ class HTMLTable:
 		print "<table>"
 		print "<tr>"
 		for t in self.titles:
-			print "<td>%s</td>" % t
+			print "<th>%s</th>" % t
 		print "</tr>"
 		return self
 	def __exit__(self, *args, **kwargs):
@@ -58,6 +62,9 @@ class HTMLOutput:
 
 		prevChecks = db.getPreviousChecks(eventid, name)
 		print "<tr><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td><td>%s</td></tr>" % (name, score, table, build, ", ".join([str(x) for x in prevChecks]))
+
+	def heading(self, text):
+		print "<h3>%s</h3>" % text
 
 	def printMessage(self, message):
 		print "<p>%s</p>" % message

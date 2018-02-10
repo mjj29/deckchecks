@@ -5,21 +5,20 @@ from printers import TextOutput, HTMLOutput
 
 output = None
 
-def recommend_checks(tournament):
+def allchecks(tournament):
+
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			tables = db.get_recommendations(id)
-			for (tablenumber, player1, player2) in tables:
-				output.heading("Table %s"%tablenumber)
-				with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks"):
-					output.printPlayer(player1, db, id)
-					output.printPlayer(player2, db, id)
-			
-				output.printLink("deckcheck?table=%s" % tablenumber, "Mark as checked")
+			checks = db.get_all_checks(id)
+			for rn in sorted(checks.keys()):
+				output.heading("Round %s"%rn)
+				with output.table("Name") as table:
+					for name in checks[rn]:
+						table.printRow(name)
 
 	except Exception as e:
-		output.printMessage("Failed to print recommendations: %s" % (e))
+		output.printMessage("Failed to print check history: %s" % (e))
 
 def docgi():
 	print """Content-type: text/html
@@ -40,11 +39,8 @@ def docgi():
 			output.printMessage("Current round is %s" % roundnum)
 	except Exception as e:
 		output.printMessage("Failed to get round number: %s" % e)
-	recommend_checks(form["event"].value)
+	allchecks(form["event"].value)
 	print """
-		<p>
-			Note: recommendations are currently completely random
-		</p>
 		</body>
 	</html>
 """
@@ -52,7 +48,7 @@ def docgi():
 def main(args):
 	with DeckDB() as db:
 		db.checkEvent(args[0], output)
-	recommend_checks(args[0])
+	allchecks(args[0])
 
 if __name__ == "__main__":
 
@@ -62,7 +58,7 @@ if __name__ == "__main__":
 		docgi()
 	else:
 		if len(sys.argv) < 2:
-			print "Usage: recommend.py <event>"
+			print "Usage: allchecks.py <event>"
 			sys.exit(1)
 		
 		output = TextOutput()
