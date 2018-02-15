@@ -12,7 +12,7 @@ def print_player(event, name):
 			id = db.getEventId(event)
 			players = db.get_players(id, name)
 
-			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks"):
+			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
 				for player in players:
 					output.printPlayer(player, db, id)
 	except Exception as e:

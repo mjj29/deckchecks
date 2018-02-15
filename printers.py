@@ -61,7 +61,7 @@ class HTMLOutput:
 		if 0 == build: build = "bye"
 
 		prevChecks = db.getPreviousChecks(eventid, name)
-		print "<tr><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td><td>%s</td></tr>" % (name, score, table, build, ", ".join([str(x) for x in prevChecks]))
+		print "<tr><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td><td>%s</td><td><a href='deckcheck?player=%s'>Check player</a></td></tr>" % (name, score, table, build, ", ".join([str(x) for x in prevChecks]), name)
 
 	def heading(self, text):
 		print "<h3>%s</h3>" % text

@@ -12,11 +12,11 @@ def print_table(tournament, tablenumber):
 			id = db.getEventId(tournament)
 			(player1, player2) = db.get_table(id, tablenumber)
 
-			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks"):
+			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
 				output.printPlayer(player1, db, id)
 				output.printPlayer(player2, db, id)
 		
-		output.printLink("deckcheck?table=%s" % tablenumber, "Mark as checked")
+		output.printLink("deckcheck?table=%s" % tablenumber, "Mark table as checked")
 	except Exception as e:
 		output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
 

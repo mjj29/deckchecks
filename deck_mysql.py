@@ -138,6 +138,11 @@ class DeckDB:
 			rows = cur.fetchall()
 			return (rows[0][0], rows[1][0])
 
+	def get_player_id(self, tournamentid, name):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT playerid FROM players WHERE players.tournamentid=%s AND name COLLATE LATIN1_GENERAL_CI = %s", (tournamentid, name))
+			rows = cur.fetchall()
+			return rows[0][0]
 
 	def get_players(self, tournamentid, name):
 		with DeckCursor(self.db.cursor()) as cur:
