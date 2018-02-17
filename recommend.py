@@ -45,6 +45,7 @@ def docgi():
 		<p>
 			Note: recommendations are currently completely random
 		</p>
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

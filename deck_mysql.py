@@ -125,6 +125,13 @@ class DeckDB:
 			return rv
 
 
+	def get_build_table(self, tournamentid, tablenum):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE buildtable=%s AND players.tournamentid=%s", (tablenum, tournamentid))
+			rows = cur.fetchall()
+			return [(r[0], r[1], r[2], r[3]) for r in rows]
+
+
 
 	def get_table(self, tournamentid, tablenum):
 		with DeckCursor(self.db.cursor()) as cur:
@@ -146,7 +153,7 @@ class DeckDB:
 
 	def get_players(self, tournamentid, name):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE name COLLATE LATIN1_GENERAL_CI  LIKE %s AND players.tournamentid=%s", ('%'+name+'%', tournamentid))
+			cur.execute("SELECT name, score, tablenum, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid LEFT OUTER JOIN pairings ON players.playerid=pairings.playerid WHERE name COLLATE LATIN1_GENERAL_CI  LIKE %s AND players.tournamentid=%s", ('%'+name+'%', tournamentid))
 			rows = cur.fetchall()
 			return [(row[0], row[1], row[2], row[3]) for row in rows]
 

@@ -52,6 +52,7 @@ You can enter any fragment of a name, all matches will be returned. Searches are
 """
 
 	print """
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

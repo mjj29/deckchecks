@@ -7,18 +7,26 @@ output = None
 
 def print_table(tournament, tablenumber):
 
-	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			(player1, player2) = db.get_table(id, tablenumber)
+			try:
+				(player1, player2) = db.get_table(id, tablenumber)
 
-			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
-				output.printPlayer(player1, db, id)
-				output.printPlayer(player2, db, id)
-		
-		output.printLink("deckcheck?table=%s" % tablenumber, "Mark table as checked")
-	except Exception as e:
-		output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
+				with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
+					output.printPlayer(player1, db, id)
+					output.printPlayer(player2, db, id)
+				
+				output.printLink("deckcheck?table=%s" % tablenumber, "Mark table as checked")
+			except Exception as e:
+				output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
+
+			try:
+				players = db.get_build_table(id, tablenumber)
+				with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
+					for player in players:
+						output.printPlayer(player, db, id)
+			except Exception as e:
+				output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
 
 def docgi():
 	print """Content-type: text/html
@@ -49,6 +57,7 @@ def docgi():
 """
 
 	print """
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

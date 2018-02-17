@@ -52,8 +52,15 @@ def docgi():
 		output.printMessage("Failed to get round number: %s" % e)
 	if "table" in form and form['table']:
 		mark_checked(form["event"].value, table=int(form["table"].value))
+		print """<script language="JavaScript" type="text/javascript"><!--
+		setTimeout("window.history.go(-2)",5000);
+		//--></script>"""
+
 	elif 'player' in form and form['player']:
 		mark_checked(form["event"].value, player=form["player"].value)
+		print """<script language="JavaScript" type="text/javascript"><!--
+		setTimeout("window.history.go(-2)",5000);
+		//--></script>"""
 	else:
 		print """
 <form>
@@ -63,6 +70,7 @@ def docgi():
 """
 
 	print """
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

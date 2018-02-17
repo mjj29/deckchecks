@@ -33,7 +33,7 @@ def insertPairing(db, eventid, table, player):
 
 def parseSeatingRow(row):
 	table = row[0]
-	name = row[1]
+	name = row[1].strip()
 	country = ""
 	score = 0
 
@@ -45,17 +45,17 @@ def parseRow(row, wltr):
 	# pairings.cfb = Table	Player 1	Score	Player2
 	if wltr:
 		if "-" == row[0]:
-			name1 = row[1]
+			name1 = row[1].strip()
 			country1 = row[2]
 			score1 = int(row[3])
 			return (0, (name1, country1, score1), None)
 		else:
 			table = int(row[0])
-			name1 = row[1]
+			name1 = row[1].strip()
 			country1 = row[2]
 			score1 = int(row[3])
 			try:
-				name2 = row[4]
+				name2 = row[4].strip()
 				country2 = row[5]
 				score2 = int(row[6])
 
@@ -64,11 +64,11 @@ def parseRow(row, wltr):
 				return (table, (name1, country1, score1), None)
 	else:
 		table = row[0]
-		name1 = row[1]
+		name1 = row[1].strip()
 		country1 = ""
 		score1 = row[2]
 		try:
-			name2 = row[3]
+			name2 = row[3].strip()
 			country2 = ""
 			score2 = row[2]
 			return (table, (name1, country1, score1), (name2, country2, score2))
@@ -234,6 +234,7 @@ Select 'Clear data' to replace existing pairings. The pairings aren't stored per
 """
 
 	print """
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

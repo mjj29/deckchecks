@@ -46,6 +46,7 @@ def docgi():
 		output.printMessage("Failed to get round number: %s" % e)
 	top_tables(form["event"].value)
 	print """
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

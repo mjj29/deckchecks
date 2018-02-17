@@ -41,6 +41,7 @@ def docgi():
 		output.printMessage("Failed to get round number: %s" % e)
 	allchecks(form["event"].value)
 	print """
+			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """
