@@ -96,9 +96,9 @@ class DeckDB:
 		return checks
 
 
-	def get_top_tables(self):
+	def get_top_tables(self, tournamentid):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT score, tablenum FROM pairings GROUP BY tablenum ORDER BY score DESC, tablenum LIMIT 100")
+			cur.execute("SELECT MAX(score), tablenum FROM pairings WHERE tournamentid=%s GROUP BY tablenum ORDER BY MAX(score) DESC, tablenum LIMIT 100", (tournamentid))
 			return cur.fetchall()
 
 	def get_recommendations(self, tournamentid):

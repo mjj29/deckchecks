@@ -10,7 +10,7 @@ def top_tables(tournament):
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			tables = db.get_top_tables()
+			tables = db.get_top_tables(id)
 			with output.table("Table", "Score", "Name", "Previous Checks", "Name", "Previous Checks") as table:
 				for row in tables:
 					score = row[0]
