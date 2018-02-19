@@ -11,8 +11,11 @@ def print_player(event, name):
 		with DeckDB() as db:
 			id = db.getEventId(event)
 			players = db.get_players(id, name)
+			maxrounds = db.get_round(id)
 
-			with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
+			headers = output.getHeaders(maxrounds)
+
+			with output.table(*headers):
 				for player in players:
 					output.printPlayer(player, db, id)
 	except Exception as e:
@@ -24,21 +27,15 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - lookup player</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Deck Checks</h1>
+			<h1>Lookup player</h1>
 """
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
-	try:
-		with DeckDB() as db:
-			id = db.getEventId(form["event"].value)
-			roundnum = db.get_round(id)
-			output.printMessage("Current round is %s" % roundnum)
-	except Exception as e:
-		output.printMessage("Failed to get round number: %s" % e)
+		roundnum = db.get_round(db.getEventId(form["event"].value))
+	output.pageHeader(form['event'].value, roundnum)
 	if "name" in form:
 		print_player(form["event"].value, form["name"].value)
 	else:

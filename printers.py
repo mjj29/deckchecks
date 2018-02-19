@@ -6,13 +6,27 @@ class NullTable:
 	def printRow(self, *args):
 		print ", ".join([str(x) for x in args])
 
-class TextOutput:
+class Output:
+	def getHeaders(self, maxrounds):
+		headers = ["Name", "Score"]
+		for i in range(1, maxrounds+1):
+			headers.append("R%s" % i)
+		headers.extend(["Build Table", "Previous Checks", "Check this round"])
+		return headers
+	def pageHeader(self, tournament, round):
+		pass
+	def table(self, *args):
+		return NullTable()
+	def printLink(self, link, text):
+		pass
+
+class TextOutput(Output):
 	def printPlayer(self, player, db, eventid):
 		(name, score, table, build) = player
 		if 0 == build:
-			print "%s (%s points, currently at %s) had byes" % (name, score, table)
+			print "%s (%s points, tables %s) had byes" % (name, score, table)
 		else:
-			print "%s (%s points, currently at %s) build table %s" % (name, score, table, build)
+			print "%s (%s points, tables %s) build table %s" % (name, score, table, build)
 
 		prevChecks = db.getPreviousChecks(eventid, name)
 
@@ -28,11 +42,6 @@ class TextOutput:
 		print text
 		print "----------------"
 	
-	def table(self, *args):
-		return NullTable()
-
-	def printLink(self, link, text):
-		pass
 
 class HTMLTable:
 	def __init__(self, *args):
@@ -53,21 +62,32 @@ class HTMLTable:
 		print "</tr>"
 
 
-class HTMLOutput:
+class HTMLOutput(Output):
 	def table(self, *args):
 		return HTMLTable(*args)
 	def printPlayer(self, player, db, eventid):
-		(name, score, table, build) = player
-		if 0 == build: build = "bye"
+		(name, score, tables, build) = player
+		if 0 == build: build = "Bye"
+		tablelinks = ""
+		for t in tables:
+			s = "<td>%s</td>" % t
+			try:
+				int(t)
+				s = ("<td><a href='get_table?table=%s'>%s</a></td>" %(t,t))
+			except: pass
+			tablelinks = tablelinks + s
 
 		prevChecks = db.getPreviousChecks(eventid, name)
-		print "<tr><td>%s</td><td>%s</td><td><a href='get_table?table=%s'>%s</a></td><td><b><a href='get_table?table=%s'>%s</a></b></td><td>%s</td><td><a href='deckcheck?player=%s'>Check player</a></td></tr>" % (name, score, table, table, build, build, ", ".join([str(x) for x in prevChecks]), name)
+		print "<tr><td><a href='get_player?name=%s'>%s</a></td><td>%s</td>%s<td><b><a href='get_table?table=%s'>%s</a></b></td><td>%s</td><td><a href='deckcheck?player=%s'>Check player</a></td></tr>" % (name, name, score, tablelinks, build, build, ", ".join([str(x) for x in prevChecks]), name)
 
 	def heading(self, text):
 		print "<h3>%s</h3>" % text
 
 	def printMessage(self, message):
-		print "<p>%s</p>" % message
+		print "<p class='message'>%s</p>" % message
 
 	def printLink(self, link, text):
-		print "<p><a href='%s'>%s</a></p>" % (link, text)
+		print "<p class='link'><a href='%s'>%s</a></p>" % (link, text)
+
+	def pageHeader(self, tournament, round):
+		print "<p class='menu'><b>%s, round %s</b> | <a href='get_table'>table</a> | <a href='get_player'>player</a> | <a href='top_tables'>top</a> | <a href='recommend'>recommend</a> | <a href='allchecks'>checks</a> | <a href='..'>change event</a></p>" % (tournament, round)

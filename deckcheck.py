@@ -35,25 +35,19 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - mark as checked</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
 			<h1>Deck Checks</h1>
 """
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
-	try:
-		with DeckDB() as db:
-			id = db.getEventId(form["event"].value)
-			roundnum = db.get_round(id)
-			output.printMessage("Current round is %s" % roundnum)
-	except Exception as e:
-		output.printMessage("Failed to get round number: %s" % e)
+		roundnum = db.get_round(db.getEventId(form["event"].value))
+	output.pageHeader(form['event'].value, roundnum)
 	if "table" in form and form['table']:
 		mark_checked(form["event"].value, table=int(form["table"].value))
 		print """<script language="JavaScript" type="text/javascript"><!--
-		setTimeout("window.history.go(-2)",5000);
+		setTimeout("window.history.go(-1)",3000);
 		//--></script>"""
 
 	elif 'player' in form and form['player']:

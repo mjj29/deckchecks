@@ -10,12 +10,18 @@ def allchecks(tournament):
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
+			maxrounds = db.get_round(id)
+
+			headers = output.getHeaders(maxrounds)
+
 			checks = db.get_all_checks(id)
 			for rn in sorted(checks.keys()):
 				output.heading("Round %s"%rn)
-				with output.table("Name") as table:
+				with output.table(*headers) as table:
 					for name in checks[rn]:
-						table.printRow(name)
+						players = db.get_players(id, name)
+						for p in players:
+								output.printPlayer(p, db, id)
 
 	except Exception as e:
 		output.printMessage("Failed to print check history: %s" % (e))
@@ -24,21 +30,15 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - check history</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Deck Checks</h1>
+			<h1>History of checks</h1>
 """
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
-	try:
-		with DeckDB() as db:
-			id = db.getEventId(form["event"].value)
-			roundnum = db.get_round(id)
-			output.printMessage("Current round is %s" % roundnum)
-	except Exception as e:
-		output.printMessage("Failed to get round number: %s" % e)
+		roundnum = db.get_round(db.getEventId(form["event"].value))
+	output.pageHeader(form['event'].value, roundnum)
 	allchecks(form["event"].value)
 	print """
 			<p><a href='root'>Return to menu</a></p>

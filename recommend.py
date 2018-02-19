@@ -10,9 +10,11 @@ def recommend_checks(tournament):
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
 			tables = db.get_recommendations(id)
+			maxrounds = db.get_round(id)
+			headers = output.getHeaders(maxrounds)
 			for (tablenumber, player1, player2) in tables:
 				output.heading("Table %s"%tablenumber)
-				with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks"):
+				with output.table(*headers):
 					output.printPlayer(player1, db, id)
 					output.printPlayer(player2, db, id)
 			
@@ -25,21 +27,15 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - recommend checks</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Deck Checks</h1>
+			<h1>Recommended Checks</h1>
 """
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
-	try:
-		with DeckDB() as db:
-			id = db.getEventId(form["event"].value)
-			roundnum = db.get_round(id)
-			output.printMessage("Current round is %s" % roundnum)
-	except Exception as e:
-		output.printMessage("Failed to get round number: %s" % e)
+		roundnum = db.get_round(db.getEventId(form["event"].value))
+	output.pageHeader(form['event'].value, roundnum)
 	recommend_checks(form["event"].value)
 	print """
 		<p>

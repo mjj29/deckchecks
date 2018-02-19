@@ -9,20 +9,26 @@ def print_table(tournament, tablenumber):
 
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			try:
-				(player1, player2) = db.get_table(id, tablenumber)
+			maxrounds = db.get_round(id)
+			headers = output.getHeaders(maxrounds)
 
-				with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
-					output.printPlayer(player1, db, id)
-					output.printPlayer(player2, db, id)
-				
-				output.printLink("deckcheck?table=%s" % tablenumber, "Mark table as checked")
-			except Exception as e:
-				output.printMessage("Failed to lookup table %s: %s" % (tablenumber, e))
+			for r in range(maxrounds, 0, -1):
+				try:
+					output.heading("Players at table %s in round %s" % (tablenumber, r))
+					(player1, player2) = db.get_table(id, tablenumber, roundnum=r)
+
+					with output.table(*headers):
+						output.printPlayer(player1, db, id)
+						output.printPlayer(player2, db, id)
+					
+					output.printLink("deckcheck?table=%s" % tablenumber, "Mark table as checked")
+				except Exception as e:
+					output.printMessage("Failed to lookup table %s in round %s: %s" % (tablenumber, r, e))
 
 			try:
+				output.heading("Players at build table %s" % tablenumber)
 				players = db.get_build_table(id, tablenumber)
-				with output.table("Name", "Score", "Current Table", "Build Table", "Previous Checks", "Check this round"):
+				with output.table(*headers):
 					for player in players:
 						output.printPlayer(player, db, id)
 			except Exception as e:
@@ -32,21 +38,15 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - lookup table</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Deck Checks</h1>
+			<h1>Lookup table</h1>
 """
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
-	try:
-		with DeckDB() as db:
-			id = db.getEventId(form["event"].value)
-			roundnum = db.get_round(id)
-			output.printMessage("Current round is %s" % roundnum)
-	except Exception as e:
-		output.printMessage("Failed to get round number: %s" % e)
+		roundnum = db.get_round(db.getEventId(form["event"].value))
+	output.pageHeader(form['event'].value, roundnum)
 	if "table" in form:
 		print_table(form["event"].value, int(form["table"].value))
 	else:

@@ -20,7 +20,13 @@ def top_tables(tournament):
 					(name2, _, _, _) = player2
 					prevChecks1 = db.getPreviousChecks(id, name1)
 					prevChecks2 = db.getPreviousChecks(id, name2)
-					table.printRow(tablenum, score, name1, ", ".join([str(x) for x in prevChecks1]), name2, ", ".join([str(x) for x in prevChecks2]))
+					table.printRow(
+						'<a href="get_table?table=%s">%s</a>' %(tablenum, tablenum),
+						score,
+						'<a href="get_player?name=%s">%s</a>' %(name1, name1),
+						", ".join([str(x) for x in prevChecks1]),
+						'<a href="get_player?name=%s">%s</a>' %(name2, name2),
+						", ".join([str(x) for x in prevChecks2]))
 
 	except Exception as e:
 		output.printMessage("Failed to print top tables: %s" % (e))
@@ -29,21 +35,15 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - top tables</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Deck Checks</h1>
-"""
+			<h1>Top tables</h1>
+""" 
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
-	try:
-		with DeckDB() as db:
-			id = db.getEventId(form["event"].value)
-			roundnum = db.get_round(id)
-			output.printMessage("Current round is %s" % roundnum)
-	except Exception as e:
-		output.printMessage("Failed to get round number: %s" % e)
+		roundnum = db.get_round(db.getEventId(form["event"].value))
+	output.pageHeader(form['event'].value, roundnum)
 	top_tables(form["event"].value)
 	print """
 			<p><a href='root'>Return to menu</a></p>

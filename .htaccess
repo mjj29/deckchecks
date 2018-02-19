@@ -3,4 +3,5 @@ Options +ExecCGI
 DirectoryIndex index.py
 
 RewriteEngine On
+RewriteRule (.*)/style.css$ /projects.git/mtg/deckchecks/style.css [L]
 RewriteRule (.*)/(.*)$ /projects.git/mtg/deckchecks/$2.py?event=$1 [L,QSA]

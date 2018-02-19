@@ -19,13 +19,13 @@ def insertSeating(db, eventid, table, player):
 		pass
 
 
-def insertPairing(db, eventid, table, player):
+def insertPairing(db, eventid, roundnum, table, player):
 	(name, country, score) = player
 	try:
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 
 		try:
-			db.insert('pairings', (idn, score, table, eventid))
+			db.insert('pairings', (idn, roundnum, score, table, eventid))
 		except:
 			pass
 	except:
@@ -81,8 +81,9 @@ def import_seatings_reader(event, reader, clear):
 		id = db.getEventId(event)
 		if clear:
 			output.printMessage("Deleting previous data");
-			db.deleteRow('players', {'tournamentid':id})
+			db.deleteRow('pairings', {'tournamentid':id})
 			db.deleteRow('seatings', {'tournamentid':id})
+			db.deleteRow('players', {'tournamentid':id})
 		for row in reader:
 			output.printMessage("%s"%row)
 			if len(row) == 0: continue
@@ -115,7 +116,7 @@ def import_pairings_reader(event, reader, clear, roundnum, wltr):
 			output.printMessage("Failed to update current round number: %s" % e)
 		if clear:
 			output.printMessage("Deleting previous data");
-			db.deleteRow('pairings', {'tournamentid':id})
+			db.deleteRow('pairings', {'tournamentid':id, 'round':roundnum})
 		for row in reader:
 			if len(row) == 0: continue
 			try:
@@ -126,12 +127,12 @@ def import_pairings_reader(event, reader, clear, roundnum, wltr):
 				continue
 
 			try:
-				insertPairing(db, id, table, player1)
+				insertPairing(db, id, roundnum, table, player1)
 			except Exception as e:
 				output.printMessage("Failed to import row %s: %s" % (row, e))
 			if player2:
 				try:
-					insertPairing(db, id, table, player2)
+					insertPairing(db, id, roundnum, table, player2)
 				except Exception as e:
 					output.printMessage("Failed to import row %s: %s" % (row, e))
 	output.printMessage("Imported %d pairings" % count)
@@ -176,14 +177,15 @@ def docgi():
 	print """Content-type: text/html
 
 	<html>
-		<head><title>Deck Checks</title></head>
+		<head><title>Deck Checks - import data</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Deck Checks</h1>
+			<h1>Import data</h1>
 """
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-	output.printMessage("Tournament is %s" % form["event"].value)
+		currentround = db.get_round(db.getEventId(form['event'].value))
+	output.pageHeader(form['event'].value, currentround)
 	if "data" in form:
 		if 'clear' in form:
 			clear = True if form['clear'].value else False
@@ -202,8 +204,8 @@ def docgi():
 		<option value='pairings' selected='true'>Pairings</option>
 		<option value='seatings'>Seatings</option>
 	</select><br/>
-	Clear data: <input type='checkbox' name='clear' value='true' checked='true' /><br/>
-	Current round: <input type='text' name='round' value='0' /><br/>
+	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
+	Import round: <input type='text' name='round' value='%s' /><br/>
 	<textarea name='data' cols='80' rows='20'></textarea><br/>
 	<input type='submit' />
 </form>
@@ -217,7 +219,7 @@ Seatings should be tab-separated, two columns:
 (The name should match exactly the format that WLTR will produce for pairings).
 </p>
 <p>
-You can get this by having 2 columns in Excel, selecting and copying them, then pasting into this dialog. Select 'Clear data' to replace existing seatings. Deselect if you want to add further seatings (such as byes) in addition to the current seatings. The 'Current round' field is ignored for seatings.
+You can get this by having 2 columns in Excel, selecting and copying them, then pasting into this dialog. Select 'Clear data' to replace existing seatings. Deselect if you want to add further seatings (such as byes) in addition to the current seatings. The 'Import round' field is ignored for seatings.
 </p>
 <h3>Pairings</h3>
 <p>
@@ -228,10 +230,11 @@ Pairings can either be copied from WLTR, in which case the format should be:
 Alternatively, they can be copied from <a href="http://pairings.channelfireball.com/pairings">http://pairings.channelfireball.com/pairings</a>. In that case, just use select-all, copy then past into this dialog. That will be in the format:
 </p>
 <pre>Table &lt;tab&gt; Surname, Firstname &lt;tab&gt; Score &lt;tab&gt; Surname, Firstname </pre>
+<p>NOTE: this will only work in <b>Firefox</b>, <b>Chrome</b> or <b>Safari</b>. It won't work in Internet Explorer or Edge.</p>
 <p>
-Select 'Clear data' to replace existing pairings. The pairings aren't stored per-round so you will normally select 'Clear data' when importing pairings for the next round. The 'Current round' field is purely information and will be displayed on the pages to look up names and tables so that people know which round's data is in the app.
+Select 'Clear data' to replace existing pairings for a round. Leave unselected to import new pairings for a round.
 </p>
-"""
+""" % (currentround+1)
 
 	print """
 			<p><a href='root'>Return to menu</a></p>
