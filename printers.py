@@ -11,13 +11,15 @@ class Output:
 		headers = ["Name", "Score"]
 		for i in range(1, maxrounds+1):
 			headers.append("R%s" % i)
-		headers.extend(["Build Table", "Previous Checks", "Check this round"])
+		headers.extend(["Build Table", "Previous Check(s)", "Check this round"])
 		return headers
 	def pageHeader(self, tournament, round):
 		pass
 	def table(self, *args):
 		return NullTable()
 	def printLink(self, link, text):
+		pass
+	def createButton(self, link, data, text):
 		pass
 
 class TextOutput(Output):
@@ -36,6 +38,9 @@ class TextOutput(Output):
 			print "%s was checked in rounds %s" % (name, ", ".join([str(x) for x in prevChecks]))
 
 	def printMessage(self, message):
+		print str(message)
+
+	def printComment(self, message):
 		print str(message)
 
 	def heading(self, text):
@@ -78,7 +83,9 @@ class HTMLOutput(Output):
 			tablelinks = tablelinks + s
 
 		prevChecks = db.getPreviousChecks(eventid, name)
-		print "<tr><td><a href='get_player?name=%s'>%s</a></td><td>%s</td>%s<td><b><a href='get_table?table=%s'>%s</a></b></td><td>%s</td><td><a href='deckcheck?player=%s'>Check player</a></td></tr>" % (name, name, score, tablelinks, build, build, ", ".join([str(x) for x in prevChecks]), name)
+		print "<tr><td><a href='get_player?name=%s'>%s</a></td><td>%s</td>%s<td><b><a href='get_table?table=%s'>%s</a></b></td><td>%s</td><td>" % (name, name, score, tablelinks, build, build, ", ".join([str(x) for x in prevChecks]))
+		self.createButton('deckcheck', {'player':name}, 'Check this player')
+		print "</td></tr>"
 
 	def heading(self, text):
 		print "<h3>%s</h3>" % text
@@ -86,8 +93,16 @@ class HTMLOutput(Output):
 	def printMessage(self, message):
 		print "<p class='message'>%s</p>" % message
 
+	def printComment(self, message):
+		print "<!-- %s -->" % message
+
 	def printLink(self, link, text):
 		print "<p class='link'><a href='%s'>%s</a></p>" % (link, text)
+	def createButton(self, link, data, text):
+		print "<form action='%s'>" % link
+		for k in data:
+			print "<input type='hidden' name='%s' value='%s' />" % (k, data[k])
+		print "<input type='submit' value='%s' /></form>" % (text)
 
 	def pageHeader(self, tournament, round):
 		print "<p class='menu'><b>%s, round %s</b> | <a href='get_table'>table</a> | <a href='get_player'>player</a> | <a href='top_tables'>top</a> | <a href='recommend'>recommend</a> | <a href='allchecks'>checks</a> | <a href='..'>change event</a></p>" % (tournament, round)

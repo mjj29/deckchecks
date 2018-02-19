@@ -12,18 +12,19 @@ def print_table(tournament, tablenumber):
 			maxrounds = db.get_round(id)
 			headers = output.getHeaders(maxrounds)
 
+			output.createButton("deckcheck", {"table": tablenumber}, "Check table this round")
+
 			for r in range(maxrounds, 0, -1):
 				try:
-					output.heading("Players at table %s in round %s" % (tablenumber, r))
 					(player1, player2) = db.get_table(id, tablenumber, roundnum=r)
+					output.heading("Players at table %s in round %s" % (tablenumber, r))
 
 					with output.table(*headers):
 						output.printPlayer(player1, db, id)
 						output.printPlayer(player2, db, id)
 					
-					output.printLink("deckcheck?table=%s" % tablenumber, "Mark table as checked")
 				except Exception as e:
-					output.printMessage("Failed to lookup table %s in round %s: %s" % (tablenumber, r, e))
+					output.printComment("Failed to lookup table %s in round %s: %s" % (tablenumber, r, e))
 
 			try:
 				output.heading("Players at build table %s" % tablenumber)

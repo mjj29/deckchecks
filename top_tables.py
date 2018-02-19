@@ -11,20 +11,21 @@ def top_tables(tournament):
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
 			tables = db.get_top_tables(id)
-			with output.table("Table", "Score", "Name", "Previous Checks", "Name", "Previous Checks") as table:
+			with output.table("Table", "Score", "Name", "Previous Checks", "Score", "Name", "Previous Checks") as table:
 				for row in tables:
 					score = row[0]
 					tablenum = row[1]
 					(player1, player2) = db.get_table(id, tablenum)
-					(name1, _, _, _) = player1
-					(name2, _, _, _) = player2
+					(name1, score1, _, _) = player1
+					(name2, score2, _, _) = player2
 					prevChecks1 = db.getPreviousChecks(id, name1)
 					prevChecks2 = db.getPreviousChecks(id, name2)
 					table.printRow(
 						'<a href="get_table?table=%s">%s</a>' %(tablenum, tablenum),
-						score,
+						score1,
 						'<a href="get_player?name=%s">%s</a>' %(name1, name1),
 						", ".join([str(x) for x in prevChecks1]),
+						score2,
 						'<a href="get_player?name=%s">%s</a>' %(name2, name2),
 						", ".join([str(x) for x in prevChecks2]))
 

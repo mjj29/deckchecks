@@ -14,11 +14,11 @@ def recommend_checks(tournament):
 			headers = output.getHeaders(maxrounds)
 			for (tablenumber, player1, player2) in tables:
 				output.heading("Table %s"%tablenumber)
+				output.createButton("deckcheck", {"table":tablenumber}, "Checked this round")
 				with output.table(*headers):
 					output.printPlayer(player1, db, id)
 					output.printPlayer(player2, db, id)
 			
-				output.printLink("deckcheck?table=%s" % tablenumber, "Mark as checked")
 
 	except Exception as e:
 		output.printMessage("Failed to print recommendations: %s" % (e))

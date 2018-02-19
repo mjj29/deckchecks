@@ -130,7 +130,7 @@ def import_pairings_reader(event, reader, clear, roundnum, wltr):
 				insertPairing(db, id, roundnum, table, player1)
 			except Exception as e:
 				output.printMessage("Failed to import row %s: %s" % (row, e))
-			if player2:
+			if False:
 				try:
 					insertPairing(db, id, roundnum, table, player2)
 				except Exception as e:
