@@ -1,3 +1,5 @@
+import re
+
 class NullTable:
 	def __enter__(self):
 		return self
@@ -47,6 +49,46 @@ class TextOutput(Output):
 		print text
 		print "----------------"
 	
+def remove_tags(string):
+	return re.sub('<[^>]*>', '', string)
+
+class TSVTable:
+	def __init__(self, *args):
+		self.titles = args
+	def __enter__(self):
+		print "\t".join([str(x) for x in self.titles])
+		return self
+	def __exit__(self, *args, **kwargs):
+		pass
+	def printRow(self, *args):
+		print "\t".join([remove_tags(str(x)) for x in args])
+
+class TSVOutput(Output):
+	def table(self, *args):
+		return TSVTable(*args)
+	def printPlayer(self, player, db, eventid):
+		(name, score, tables, build) = player
+		if 0 == build: build = "Bye"
+
+		prevChecks = db.getPreviousChecks(eventid, name)
+		print "\t".join([str(x) for x in [name, score]+tables+[build,", ".join([str(x) for x in prevChecks])]])
+
+	def heading(self, text):
+		print text
+
+	def printMessage(self, message):
+		print message
+
+	def printComment(self, message):
+		print "# %s"%text
+
+	def printLink(self, link, text):
+		pass
+	def createButton(self, link, data, text):
+		pass
+
+	def pageHeader(self, tournament, round):
+		pass
 
 class HTMLTable:
 	def __init__(self, *args):

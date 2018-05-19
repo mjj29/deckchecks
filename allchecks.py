@@ -2,6 +2,7 @@
 import csv, sys, cgitb, os, cgi
 from deck_mysql import DeckDB
 from printers import TextOutput, HTMLOutput
+import deckcheck
 
 output = None
 
@@ -15,7 +16,7 @@ def allchecks(tournament):
 			headers = output.getHeaders(maxrounds)
 
 			checks = db.get_all_checks(id)
-			for rn in sorted(checks.keys()):
+			for rn in reversed(sorted(checks.keys())):
 				output.heading("Round %s"%rn)
 				with output.table(*headers) as table:
 					for name in checks[rn]:
@@ -39,8 +40,23 @@ def docgi():
 		db.checkEvent(form["event"].value, output)
 		roundnum = db.get_round(db.getEventId(form["event"].value))
 	output.pageHeader(form['event'].value, roundnum)
-	allchecks(form["event"].value)
+	if "tables" in form and form['tables']:
+		deckcheck.output = output
+		for table in form['tables'].value.split():
+			deckcheck.mark_checked(form["event"].value, table=table)
+	else:
+		print """
+			<h2>Check tables</h2>
+			<p>Enter one table per line</p>
+			<form>
+			<textarea name='tables' cols='30' rows='5'></textarea>
+			<br/>
+			<input type='submit' value='Mark as checked' />
+			</form>
+"""
+		allchecks(form["event"].value)
 	print """
+			<p><a href='export?type=checks'>Download as TSV</a></p>
 			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>

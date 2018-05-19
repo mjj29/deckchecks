@@ -84,7 +84,7 @@ class DeckDB:
 
 	def get_all_checks(self, event):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT round, name FROM deckchecks INNER JOIN players ON deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s ORDER BY round", event)
+			cur.execute("SELECT round, name FROM deckchecks INNER JOIN players ON deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s ORDER BY round DESC", event)
 			rows = cur.fetchall()
 			currentround = 0
 			checks = {}

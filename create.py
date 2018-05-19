@@ -2,6 +2,9 @@
 from deck_mysql import DeckDB 
 import sys
 
+print "You didn't want this, it drops the whole database"
+return
+
 def main(args):
 	tables = [ 
 		('tournaments', ['CREATE table `tournaments` (tournamentid INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100) UNIQUE)']),
@@ -9,7 +12,7 @@ def main(args):
 		('round', ["CREATE TABLE `round` (roundnum INT, tournamentid INT, CONSTRAINT fkidtourr FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
 		('seatings', ["CREATE TABLE `seatings` (playerid INT UNIQUE, buildtable INT, tournamentid INT, INDEX ididx(playerid), CONSTRAINT fkidseat FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtours FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
 		('pairings', ["CREATE TABLE `pairings` (playerid INT, round INT, score INT, tablenum INT, tournamentid INT, UNIQUE KEY pairings_key (tournamentid, playerid, round), INDEX ididx(playerid), CONSTRAINT fkidpair FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtoura FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
-		('deckchecks', ["CREATE TABLE `deckchecks` (playerid INT UNIQUE, tournamentid INT, round INT, INDEX ididx(playerid), CONSTRAINT fkiddeck FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtourd FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
+		('deckchecks', ["CREATE TABLE `deckchecks` (playerid INT, tournamentid INT, round INT, UNIQUE KEY checks_key (playerid, tournamentid, round), INDEX ididx(playerid), CONSTRAINT fkiddeck FOREIGN KEY (playerid) REFERENCES players(playerid) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT fkidtourd FOREIGN KEY (tournamentid) REFERENCES tournaments(tournamentid) ON DELETE CASCADE ON UPDATE CASCADE)"]),
 	]
 	with DeckDB() as db:
 		for (t, _) in reversed(tables):

@@ -47,6 +47,7 @@ def docgi():
 	output.pageHeader(form['event'].value, roundnum)
 	top_tables(form["event"].value)
 	print """
+			<p><a href='export?type=top'>Download as TSV</a></p>
 			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>

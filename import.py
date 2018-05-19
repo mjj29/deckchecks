@@ -22,14 +22,25 @@ def insertSeating(db, eventid, table, player):
 def insertPairing(db, eventid, roundnum, table, player):
 	(name, country, score) = player
 	try:
+		output.printMessage("looking up %s" % name)
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
-
+	except Exception as e:
+		output.printMessage("Failed to lookup player %s (%s)" % (str(player), e))
 		try:
-			db.insert('pairings', (idn, roundnum, score, table, eventid))
-		except:
-			pass
+			db.insert('players', (name, country, eventid))
+			output.printMessage('added player')
+			idn = db.find('players', {'name':name, 'tournamentid':eventid})[0]
+			output.printMessage('looked up player')
+			db.insert('seatings', (idn, 0, eventid))
+			output.printMessage('inserted seating')
+		except Exception as e:
+			output.printMessage("Failed to add player %s (%s)" % (str(player), e))
+
+	try:
+		output.printMessage("Inserting with id %s" %idn)
+		db.insert('pairings', (idn, roundnum, score, table, eventid))
 	except:
-		output.printMessage("Failed to lookup player %s" % str(player))
+		pass
 
 def parseSeatingRow(row):
 	table = row[0]
@@ -231,8 +242,16 @@ Alternatively, they can be copied from <a href="http://pairings.channelfireball.
 </p>
 <pre>Table &lt;tab&gt; Surname, Firstname &lt;tab&gt; Score &lt;tab&gt; Surname, Firstname </pre>
 <p>NOTE: this will only work in <b>Firefox</b>, <b>Chrome</b> or <b>Safari</b>. It won't work in Internet Explorer or Edge.</p>
+<p>NOTE: you will see warnings failing to import the header and footer of the page. This is entirely normal.</p>
 <p>
 Select 'Clear data' to replace existing pairings for a round. Leave unselected to import new pairings for a round.
+</p>
+<h3>Adding late players</h3>
+<p>
+If you do nothing and import pairings containing the new players they will be imported with a start table of 0. Alternatively, 
+You can enter a line like:<br/>
+&lt;number&gt;&lt;tab&gt;&lt;surname, name&gt;<br/>
+Import seatings without clear and this will add an additional player with the given starting table number.
 </p>
 """ % (currentround+1)
 
