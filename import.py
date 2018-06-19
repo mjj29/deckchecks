@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
-import csv, sys, os, cgi, cgitb
+import csv, sys, os, cgi, cgitb, urllib2, bs4
 
 output = None
 
@@ -50,6 +50,48 @@ def parseSeatingRow(row):
 
 	return (table, (name, country, score), None)
 	
+def importAllDataURL(event, pairingsurl, clear):
+	rnd = 0
+	with DeckDB() as db:
+		id = db.getEventId(event)
+		if clear:
+			output.printMessage("Deleting previous data");
+			db.deleteRow('pairings', {'tournamentid':id})
+			db.deleteRow('seatings', {'tournamentid':id})
+			db.deleteRow('players', {'tournamentid':id})
+
+		while True:
+			rnd = rnd + 1
+			html = urllib2.urlopen(pairingsurl+'/'+str(rnd)).read()
+
+			soup =  bs4.BeautifulSoup(html)
+
+			table = soup.find('table')
+			if not table: break
+			output.printMessage("Importing data for round %s" % rnd)
+			counter = 0
+			for row in table.find_all('tr'):
+				(table, name, points, opponent) = row.find_all('td')[0:4]
+				try:
+					table = int(table.get_text())
+					player = (name.get_text(), '', int(points.get_text()))
+					if rnd == 1:
+						insertSeating(db, id, table, player)
+					insertPairing(db, id, rnd, table, player)
+				except Exception as e:
+					try:
+						output.printMessage("Failed to import row: %s: %s" % (row.get_text(), e))
+					except:
+						output.printMessage('Failed to import row: %s' % e)
+				counter = counter + 1
+			output.printMessage("Imported %d pairings" % counter)
+		rnd = rnd - 1
+		output.printMessage("Imported %d rounds" % rnd)
+		try:
+			db.deleteRow('round', {'tournamentid':id})
+			db.insert('round', [rnd, id])
+		except Exception as e:
+			output.printMessage("Failed to update current round number: %s" % e)
 
 def parseRow(row, wltr):
 	# wltr = "Table","Player 1","Country","Points","Player 2","Country","Points"
@@ -197,18 +239,27 @@ def docgi():
 		db.checkEvent(form["event"].value, output)
 		currentround = db.get_round(db.getEventId(form['event'].value))
 	output.pageHeader(form['event'].value, currentround)
+	if 'clear' in form:
+		clear = True if form['clear'].value else False
+	else:
+		clear = False
 	if "data" in form:
-		if 'clear' in form:
-			clear = True if form['clear'].value else False
-		else:
-			clear = False
 		if 'round' in form:
 			roundnum = int(form['round'].value)
 		else:
 			roundnum = 0
 		import_data(form["event"].value, form["type"].value, form["data"].value, clear, roundnum)
+	elif 'pairingsurl' in form:
+		importAllDataURL(form['event'].value, form['pairingsurl'].value, clear)
 	else:
 		print """
+<div>
+<form method='post'>
+	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
+	Import all data from CFB Event URL: <input type='text' name='pairingsurl' /> <input type='submit'/>
+</form>
+</div>
+<div>
 <form method='post'>
 	Enter data:
 	<select name='type'>
@@ -220,7 +271,11 @@ def docgi():
 	<textarea name='data' cols='80' rows='20'></textarea><br/>
 	<input type='submit' />
 </form>
+</div>
 <h2>Instructions</h2>
+<p>
+The simplest way to import data for a GP or other event on CFB pairings site is just to put the pairings URL into the top form. That will load all data up until this point, assuming R1 pairings are original decklist tables and all byes are sorted alphabetically. For more complex use cases, use the other forms. You can manually important seatings and then use the URL import to load the pairings.
+</p>
 <h3>Seatings</h3>
 <p>
 Seatings should be tab-separated, two columns:
@@ -270,6 +325,8 @@ def main(args):
 		import_seatings_file(args[0], args[2], True)
 	elif args[1] == "pairings":
 		import_pairings_file(args[0], args[2], True, 0)
+	elif args[1] == "url":
+		importAllDataURL(args[0], args[2], True)
 	else:
 		print "Unknown type "+args[1]
 
