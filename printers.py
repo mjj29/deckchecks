@@ -15,17 +15,19 @@ class Output:
 			headers.append("R%s" % i)
 		headers.extend(["Build Table", "Previous Check(s)", "Check this round"])
 		return headers
-	def pageHeader(self, tournament, round):
+	def pageHeader(self, tournament, round, form):
 		pass
 	def table(self, *args):
 		return NullTable()
-	def printLink(self, link, text):
-		pass
-	def createButton(self, link, data, text):
+	def printLink(self, form, link, text):
+		return self.makeLink(form, link, text)
+	def makeLink(self, form, link, text):
+		return text
+	def createButton(self, form, link, data, text):
 		pass
 
 class TextOutput(Output):
-	def printPlayer(self, player, db, eventid):
+	def printPlayer(self, player, db, eventid, form):
 		(name, score, table, build) = player
 		if 0 == build:
 			print "%s (%s points, tables %s) had byes" % (name, score, table)
@@ -66,7 +68,7 @@ class TSVTable:
 class TSVOutput(Output):
 	def table(self, *args):
 		return TSVTable(*args)
-	def printPlayer(self, player, db, eventid):
+	def printPlayer(self, player, db, eventid, form):
 		(name, score, tables, build) = player
 		if 0 == build: build = "Bye"
 
@@ -82,12 +84,10 @@ class TSVOutput(Output):
 	def printComment(self, message):
 		print "# %s"%text
 
-	def printLink(self, link, text):
-		pass
-	def createButton(self, link, data, text):
+	def createButton(self, form, link, data, text):
 		pass
 
-	def pageHeader(self, tournament, round):
+	def pageHeader(self, tournament, round, form):
 		pass
 
 class HTMLTable:
@@ -112,7 +112,7 @@ class HTMLTable:
 class HTMLOutput(Output):
 	def table(self, *args):
 		return HTMLTable(*args)
-	def printPlayer(self, player, db, eventid):
+	def printPlayer(self, player, db, eventid, form):
 		(name, score, tables, build) = player
 		if 0 == build: build = "Bye"
 		tablelinks = ""
@@ -120,13 +120,17 @@ class HTMLOutput(Output):
 			s = "<td>%s</td>" % t
 			try:
 				int(t)
-				s = ("<td><a href='get_table?table=%s'>%s</a></td>" %(t,t))
+				s = ("<td>"+self.makeLink(form, 'get_table?table=%s'%t, t)+"</td>")
 			except: pass
 			tablelinks = tablelinks + s
 
 		prevChecks = db.getPreviousChecks(eventid, name)
-		print "<tr><td><a href='get_player?name=%s'>%s</a></td><td>%s</td>%s<td><b><a href='get_table?table=%s'>%s</a></b></td><td>%s</td><td>" % (name, name, score, tablelinks, build, build, ", ".join([str(x) for x in prevChecks]))
-		self.createButton('deckcheck', {'player':name}, 'Check this player')
+		print "<tr><td>"
+		print self.makeLink(form, 'get_player?name=%s'%name, name)
+		print "<td>%s</td>%s<td><b>"%(score, tablelinks)
+		print self.makeLink(form, 'get_table?table=%s'%build, build)
+		print "</b></td><td>%s</td><td>" % (", ".join([str(x) for x in prevChecks]))
+		self.createButton(form, 'deckcheck', {'player':name}, 'Check this player')
 		print "</td></tr>"
 
 	def heading(self, text):
@@ -138,13 +142,36 @@ class HTMLOutput(Output):
 	def printComment(self, message):
 		print "<!-- %s -->" % message
 
-	def printLink(self, link, text):
-		print "<p class='link'><a href='%s'>%s</a></p>" % (link, text)
-	def createButton(self, link, data, text):
+	def makeLink(self, form, link, text):
+		l = "<form id='%s' action='%s' method='post'>" % (link, link)
+		l = l + "<input type='hidden' name='password' value='%s'/>" % (form['password'].value if 'password' in form else '')
+		l = l + "</form>"
+		l = l + "<a href='#' onclick=\"document.getElementById('%s').submit();\">%s</a>"% (link, text)
+		return l
+	def printLink(self, form, link, text):
+		print "<p class='link'>"+self.makeLink(form, link, text)+"</p>" 
+	def createButton(self, form, link, data, text):
 		print "<form action='%s'>" % link
+		print "<input type='hidden' name='password' value='%s'/>" % form['password'].value if 'password' in form else ''
 		for k in data:
 			print "<input type='hidden' name='%s' value='%s' />" % (k, data[k])
 		print "<input type='submit' value='%s' /></form>" % (text)
 
-	def pageHeader(self, tournament, round):
-		print "<p class='menu'><b>%s, round %s</b> | <a href='get_table'>table</a> | <a href='get_player'>player</a> | <a href='top_tables'>top</a> | <a href='recommend'>recommend</a> | <a href='allchecks'>checks</a> | <a href='..'>change event</a></p>" % (tournament, round)
+	def pageHeader(self, db, tournament, round, form):
+		tournament = db.getEventName(db.getEventId(tournament))
+		print "<div class='menu'><b>%s, round %s</b> | " % (tournament, round)
+		print self.makeLink(form, 'get_table', 'table')
+		print " | "
+		print self.makeLink(form, 'get_player', 'player')
+		print " | "
+		print self.makeLink(form, 'top_tables', 'top')
+		print " | "
+		print self.makeLink(form, 'recommend', 'recommend')
+		print " | "
+		print self.makeLink(form, 'allchecks', 'checks')
+		print " | "
+		print self.makeLink(form, 'import', 'update')
+		print " | "
+		print self.makeLink(form, 'settings', 'settings')
+		print " | <a href='..'>change event</a></div>"
+

@@ -2,11 +2,12 @@
 import csv, sys, cgitb, os, cgi
 from deck_mysql import DeckDB
 from printers import TextOutput, HTMLOutput
+from login import check_login
 import deckcheck
 
 output = None
 
-def allchecks(tournament):
+def allchecks(tournament, form):
 
 	try:
 		with DeckDB() as db:
@@ -22,7 +23,7 @@ def allchecks(tournament):
 					for name in checks[rn]:
 						players = db.get_players(id, name)
 						for p in players:
-								output.printPlayer(p, db, id)
+								output.printPlayer(p, db, id, form)
 
 	except Exception as e:
 		output.printMessage("Failed to print check history: %s" % (e))
@@ -39,7 +40,9 @@ def docgi():
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
 		roundnum = db.get_round(db.getEventId(form["event"].value))
-	output.pageHeader(form['event'].value, roundnum)
+		output.pageHeader(db, form['event'].value, roundnum, form)
+	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'allchecks'):
+		return
 	if "tables" in form and form['tables']:
 		deckcheck.output = output
 		for table in form['tables'].value.split():
@@ -49,15 +52,16 @@ def docgi():
 			<h2>Check tables</h2>
 			<p>Enter one table per line</p>
 			<form>
+			<input type='hidden' name='password' value='%s'/>
 			<textarea name='tables' cols='30' rows='5'></textarea>
 			<br/>
 			<input type='submit' value='Mark as checked' />
 			</form>
-"""
-		allchecks(form["event"].value)
+""" % form['password'].value if 'password' in form else ''
+		allchecks(form["event"].value, form)
+	output.printLink(form, 'export?type=checks', 'Download as TSV')
+	output.printLink(form, 'root', 'Return to menu')
 	print """
-			<p><a href='export?type=checks'>Download as TSV</a></p>
-			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """
@@ -65,7 +69,7 @@ def docgi():
 def main(args):
 	with DeckDB() as db:
 		db.checkEvent(args[0], output)
-	allchecks(args[0])
+	allchecks(args[0], {})
 
 if __name__ == "__main__":
 

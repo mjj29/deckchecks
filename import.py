@@ -2,6 +2,7 @@
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
 import csv, sys, os, cgi, cgitb, urllib2, bs4
+from login import check_login
 
 output = None
 
@@ -22,22 +23,16 @@ def insertSeating(db, eventid, table, player):
 def insertPairing(db, eventid, roundnum, table, player):
 	(name, country, score) = player
 	try:
-		output.printMessage("looking up %s" % name)
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	except Exception as e:
-		output.printMessage("Failed to lookup player %s (%s)" % (str(player), e))
 		try:
 			db.insert('players', (name, country, eventid))
-			output.printMessage('added player')
 			idn = db.find('players', {'name':name, 'tournamentid':eventid})[0]
-			output.printMessage('looked up player')
 			db.insert('seatings', (idn, 0, eventid))
-			output.printMessage('inserted seating')
 		except Exception as e:
 			output.printMessage("Failed to add player %s (%s)" % (str(player), e))
 
 	try:
-		output.printMessage("Inserting with id %s" %idn)
 		db.insert('pairings', (idn, roundnum, score, table, eventid))
 	except:
 		pass
@@ -51,6 +46,8 @@ def parseSeatingRow(row):
 	return (table, (name, country, score), None)
 	
 def importAllDataURL(event, pairingsurl, clear):
+	output.printMessage("Loading data from %s" % pairingsurl)
+	sys.stdout.flush()
 	rnd = 0
 	with DeckDB() as db:
 		id = db.getEventId(event)
@@ -69,6 +66,7 @@ def importAllDataURL(event, pairingsurl, clear):
 			table = soup.find('table')
 			if not table: break
 			output.printMessage("Importing data for round %s" % rnd)
+			sys.stdout.flush()
 			counter = 0
 			for row in table.find_all('tr'):
 				(table, name, points, opponent) = row.find_all('td')[0:4]
@@ -85,6 +83,7 @@ def importAllDataURL(event, pairingsurl, clear):
 						output.printMessage('Failed to import row: %s' % e)
 				counter = counter + 1
 			output.printMessage("Imported %d pairings" % counter)
+			sys.stdout.flush()
 		rnd = rnd - 1
 		output.printMessage("Imported %d rounds" % rnd)
 		try:
@@ -238,7 +237,10 @@ def docgi():
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
 		currentround = db.get_round(db.getEventId(form['event'].value))
-	output.pageHeader(form['event'].value, currentround)
+		url = db.getEventUrl(db.getEventId(form['event'].value))
+		output.pageHeader(db, form['event'].value, currentround, form)
+	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'import'):
+		return
 	if 'clear' in form:
 		clear = True if form['clear'].value else False
 	else:
@@ -255,12 +257,14 @@ def docgi():
 		print """
 <div>
 <form method='post'>
+	<input type='hidden' name='password' value='%s'/>
 	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
-	Import all data from CFB Event URL: <input type='text' name='pairingsurl' /> <input type='submit'/>
+	Import all data from CFB Event URL: <input type='text' name='pairingsurl' value='%s'/> <input type='submit'/>
 </form>
 </div>
 <div>
 <form method='post'>
+	<input type='hidden' name='password' value='%s'/>
 	Enter data:
 	<select name='type'>
 		<option value='pairings' selected='true'>Pairings</option>
@@ -308,10 +312,10 @@ You can enter a line like:<br/>
 &lt;number&gt;&lt;tab&gt;&lt;surname, name&gt;<br/>
 Import seatings without clear and this will add an additional player with the given starting table number.
 </p>
-""" % (currentround+1)
+""" % (form['password'].value if 'password' in form else '', url,form['password'].value if 'password' in form else '',  currentround+1)
 
+	output.printLink(form, 'root', 'Return to menu')
 	print """
-			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

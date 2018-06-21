@@ -2,10 +2,11 @@
 import csv, sys, cgitb, os, cgi
 from deck_mysql import DeckDB
 from printers import TextOutput, HTMLOutput
+from login import check_login
 
 output = None
 
-def top_tables(tournament):
+def top_tables(tournament, form):
 
 	try:
 		with DeckDB() as db:
@@ -21,12 +22,12 @@ def top_tables(tournament):
 					prevChecks1 = db.getPreviousChecks(id, name1)
 					prevChecks2 = db.getPreviousChecks(id, name2)
 					table.printRow(
-						'<a href="get_table?table=%s">%s</a>' %(tablenum, tablenum),
+						output.makeLink(form, 'get_table?table=%s'%tablenum, tablenum),
 						score1,
-						'<a href="get_player?name=%s">%s</a>' %(name1, name1),
+						output.makeLink(form, 'get_player?name=%s'%name1, name1),
 						", ".join([str(x) for x in prevChecks1]),
 						score2,
-						'<a href="get_player?name=%s">%s</a>' %(name2, name2),
+						output.makeLink(form, 'get_player?name=%s'%name2, name2),
 						", ".join([str(x) for x in prevChecks2]))
 
 	except Exception as e:
@@ -44,11 +45,13 @@ def docgi():
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
 		roundnum = db.get_round(db.getEventId(form["event"].value))
-	output.pageHeader(form['event'].value, roundnum)
-	top_tables(form["event"].value)
+		output.pageHeader(db, form['event'].value, roundnum, form)
+	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'top_tables'):
+		return
+	top_tables(form["event"].value, form)
+	output.printLink(form, 'export?type=top', 'Download as TSV')
+	output.printLink(form, 'root', 'Return to menu')
 	print """
-			<p><a href='export?type=top'>Download as TSV</a></p>
-			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """
@@ -56,7 +59,7 @@ def docgi():
 def main(args):
 	with DeckDB() as db:
 		db.checkEvent(args[0], output)
-	top_tables(args[0])
+	top_tables(args[0], {})
 
 if __name__ == "__main__":
 

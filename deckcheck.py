@@ -2,6 +2,7 @@
 import csv, sys, cgitb, os, cgi
 from deck_mysql import DeckDB
 from printers import TextOutput, HTMLOutput
+from login import check_login
 
 output = None
 
@@ -43,7 +44,9 @@ def docgi():
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
 		roundnum = db.get_round(db.getEventId(form["event"].value))
-	output.pageHeader(form['event'].value, roundnum)
+		output.pageHeader(db, form['event'].value, roundnum, form)
+	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'deckcheck'):
+		return
 	if "table" in form and form['table']:
 		mark_checked(form["event"].value, table=int(form["table"].value))
 		print """<script language="JavaScript" type="text/javascript"><!--
@@ -58,13 +61,14 @@ def docgi():
 	else:
 		print """
 <form>
+			<input type='hidden' name='password' value='%s'/>
 	Enter table number: <input type='text' name='table' /><input type='submit' /><br/>
 	Enter player name: <input type='text' name='player' /><input type='submit' />
 </form>
-"""
+"""%form['password'].value if 'password' in form else ''
 
+	output.printLink(form, 'root', 'Return to menu')
 	print """
-			<p><a href='root'>Return to menu</a></p>
 		</body>
 	</html>
 """

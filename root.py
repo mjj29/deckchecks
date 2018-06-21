@@ -2,6 +2,7 @@
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
 import csv, sys, os, cgi, cgitb
+from login import check_login
 
 cgitb.enable()
 output = HTMLOutput()
@@ -17,14 +18,16 @@ form = cgi.FieldStorage()
 with DeckDB() as db:
 	db.checkEvent(form["event"].value, output)
 	roundnum = db.get_round(db.getEventId(form["event"].value))
-output.pageHeader(form['event'].value, roundnum)
+	output.pageHeader(db, form['event'].value, roundnum, form)
+if check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'root'):
+	output.printLink(form, 'get_table', 'Lookup by table')
+	output.printLink(form, 'get_player', 'Lookup by player')
+	output.printLink(form, 'top_tables', 'Check top tables')
+	output.printLink(form, 'recommend', 'Recommend checks')
+	output.printLink(form, 'allchecks', 'See all checks')
+	output.printLink(form, 'import', 'Import data')
+	output.printLink(form, 'settings', 'Event settings')
 print """
-<h2><a href='get_table'>Lookup by table</a></h2>
-<h2><a href='get_player'>Lookup by player</a></h2>
-<h2><a href='top_tables'>Check top tables</a></h2>
-<h2><a href='recommend'>Recommend checks</a></h2>
-<h2><a href='allchecks'>See all checks</a></h2>
-<h2><a href='import'>Import data</a></h2>
 </body>
 </html>
 """

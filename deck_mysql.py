@@ -19,7 +19,7 @@ class DeckDB:
 		'players':['name', 'country', 'tournamentid'],
 		'deckchecks':['playerid', 'tournamentid', 'round'],
 		'round':['roundnum', 'tournamentid'],
-		'tournaments':['name'],
+		'tournaments':['name', 'url', 'rounds', 'password'],
 	}
 
 	def __init__(self):
@@ -59,6 +59,11 @@ class DeckDB:
 			cur.execute("DELETE FROM %s" % table)
 			self.db.commit()
 
+	def update(self, table, matches, values):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("UPDATE "+table+" SET " +(', '.join([str(x)+'="'+str(values[x])+'"' for x in values])) + " WHERE " + (' AND '.join([str(x)+'="'+str(matches[x])+'"' for x in matches])))
+			self.db.commit()
+
 	def insert(self, table, data):
 
 		with DeckCursor(self.db.cursor()) as cur:
@@ -72,14 +77,51 @@ class DeckDB:
 			return int(rows[0][0])
 
 	def getEventId(self, event):
+		try:
+			return int(event)
+		except:
+			with DeckCursor(self.db.cursor()) as cur:
+				cur.execute("SELECT tournamentid FROM tournaments WHERE name=%s", event)
+				rows = cur.fetchall()
+				return int(rows[0][0])
+
+	def getEventSettings(self, eventid):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT tournamentid FROM tournaments WHERE name=%s", event)
+			cur.execute("SELECT name, url, rounds, password FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return rows[0]
+
+	def getEventPassword(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT password FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return rows[0][0]
+
+
+	def getEventName(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return rows[0][0]
+
+
+	def getEventRounds(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT rounds FROM tournaments WHERE tournamentid=%s", eventid)
 			rows = cur.fetchall()
 			return int(rows[0][0])
 
+
+	def getEventUrl(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT url FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return rows[0][0]
+
+
 	def get_events(self):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name FROM tournaments")
+			cur.execute("SELECT tournamentid, name, url FROM tournaments")
 			return cur.fetchall()
 
 	def get_all_checks(self, event):
