@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
-import csv, sys, os, cgi, cgitb, urllib2, bs4
+import csv, sys, os, cgi, cgitb, urllib2, bs4, subprocess, re
 from login import check_login
+import xml.etree.ElementTree as ET
 
 output = None
 
@@ -128,6 +129,7 @@ def parseRow(row, wltr):
 			return (table, (name1, country1, score1), None)
 
 def import_seatings_reader(event, reader, clear):
+	print "import_seatings_reader"
 	count = 0
 	with DeckDB() as db:
 		id = db.getEventId(event)
@@ -137,6 +139,7 @@ def import_seatings_reader(event, reader, clear):
 			db.deleteRow('seatings', {'tournamentid':id})
 			db.deleteRow('players', {'tournamentid':id})
 		for row in reader:
+			print str(row)
 			output.printMessage("%s"%row)
 			if len(row) == 0: continue
 			try:
@@ -195,6 +198,114 @@ def import_seatings_file(event, seatingsFile, clear):
 		reader = csv.reader(f, delimiter='\t')
 		import_seatings_reader(event, reader, clear)
 
+def import_all_xml(event, data, clear):
+	with DeckDB() as db:
+		id = db.getEventId(event)
+		if clear:
+			output.printMessage("Deleting previous data");
+			db.deleteRow('pairings', {'tournamentid':id})
+			db.deleteRow('seatings', {'tournamentid':id})
+			db.deleteRow('players', {'tournamentid':id})
+
+		root = ET.fromstring(data)
+		participants = {}
+		for team in root.findall('participation')[0].findall('team'):
+			name = team.get('name')
+			pid = team.get('id')
+			participants[pid] = (name, '', 0)
+		for person in root.findall('participation')[0].findall('person'):
+			name = person.get('last')+', '+person.get('first')
+			pid = person.get('id')
+			participants[pid] = (name, person.get('country'), 0)
+
+		roundnum = 0
+		for rnd in root.findall('matches')[0].findall('round'):
+			roundnum = rnd.get('number')
+			output.printMessage('Importing data for round %s' % roundnum)
+			table = 0
+			for match in rnd.findall('match'):
+				try:
+					table = table + 1
+					player1 = participants[match.get('person')]
+					player2 = participants[match.get('opponent')]
+					if int(roundnum) == 1:
+						insertSeating(db, id, table, player1)
+						insertSeating(db, id, table, player2)
+					insertPairing(db, id, roundnum, table, player1)
+					insertPairing(db, id, roundnum, table, player2)
+				except Exception as e:
+					output.printMessage('Failed to import match: %s' % e)
+		output.printMessage("Imported %s rounds" % roundnum)
+		try:
+			db.deleteRow('round', {'tournamentid':id})
+			db.insert('round', [roundnum, id])
+		except Exception as e:
+			output.printMessage("Failed to update current round number: %s" % e)
+
+def import_round_pdf(event, data, clear, roundnum, seatings=False):
+
+	with open('/tmp/import.pdf', 'wb') as f:
+		f.write(data)
+	subprocess.check_call(['/usr/bin/pdftotext', '/tmp/import.pdf'])
+
+	with DeckDB() as db:
+		try:
+			id = db.getEventId(event)
+			db.deleteRow('round', {'tournamentid':id})
+			db.insert('round', [roundnum, id])
+		except Exception as e:
+			output.printMessage("Failed to update current round number: %s" % e)
+		if clear:
+			output.printMessage("Deleting previous data");
+			if seatings:
+				db.deleteRow('pairings', {'tournamentid':id})
+				db.deleteRow('seatings', {'tournamentid':id})
+				db.deleteRow('players', {'tournamentid':id})
+			else:
+				db.deleteRow('pairings', {'tournamentid':id, 'round':roundnum})
+
+		start = False
+		mode='table'
+		with open('/tmp/import.txt') as f:
+			for l in f:
+				if l.startswith('----'):
+					start = True
+					l = l.replace('-', '')
+				l = l.strip()
+				if start:
+					if mode=='table':
+						table=int(l)
+						mode='name1'
+					elif mode=='name1':
+						name1=l
+						mode='dci1'
+					elif mode=='dci1':
+						mode='name2'
+					elif mode=='name2':
+						name2=l
+						mode='dci2'
+					elif mode=='dci2':
+						mode='score'
+					elif mode=='score':
+						scores = l.split('-')
+						score1 = int(scores[0])
+						score2 = int(scores[1])
+						mode='table'
+						player1 = (name1, '', score1)
+						player2 = (name2, '', score2)
+						
+						if int(roundnum) == 1:
+							insertSeating(db, id, table, player1)
+							insertSeating(db, id, table, player2)
+						insertPairing(db, id, roundnum, table, player1)
+						insertPairing(db, id, roundnum, table, player2)
+					
+		output.printMessage("Imported %s rounds" % roundnum)
+		try:
+			db.deleteRow('round', {'tournamentid':id})
+			db.insert('round', [roundnum, id])
+		except Exception as e:
+			output.printMessage("Failed to update current round number: %s" % e)
 
 def import_pairings_file(event, pairingsFile, clear, roundnum):
 
@@ -203,12 +314,21 @@ def import_pairings_file(event, pairingsFile, clear, roundnum):
 	import_pairings_data(event, data, clear, roundnum)
 
 def import_seatings_data(event, seatData, clear):
-	reader = csv.reader(seatData.split('\n'), delimiter='\t')
-	import_seatings_reader(event, reader, clear)
+	if seatData.startswith('%PDF'):
+		import_round_pdf(event, seatData, clear, 0, seatings=True)
+	else:
+		reader = csv.reader(seatData.split('\n'), delimiter='\t')
+		import_seatings_reader(event, reader, clear)
 
 
 def import_pairings_data(event, pairingData, clear, roundnum):
-	if '\t' in pairingData:
+	if pairingData.startswith('<'):
+		import_all_xml(event, pairingData, clear)
+		return
+	elif pairingData.startswith('%PDF'):
+		import_round_pdf(event, pairingData, clear, roundnum, seatings=False)
+		return
+	elif '\t' in pairingData:
 		reader = csv.reader(pairingData.split('\n'), delimiter='\t')
 		wltr=False
 	else:
@@ -217,6 +337,12 @@ def import_pairings_data(event, pairingData, clear, roundnum):
 	import_pairings_reader(event, reader, clear, roundnum, wltr)
 
 def import_data(event, dtype, data, clear, roundnum):
+	if 'Wizards Event Reporter' in data:
+		d = []
+		for l in data.split('\n'):
+			l = re.sub(r'([0-9]*) ([^0-9]*) *[0-9]* *([^0-9]*) *[0-9]* ([0-9]*)-([0-9]*)', r'\1\t\2\t\4\t\3\t\5', l)
+			d.append(l)
+		data = '\n'.join(d)
 	if "seatings" == dtype:
 		import_seatings_data(event, data, clear)
 	elif "pairings" == dtype:
@@ -245,25 +371,27 @@ def docgi():
 		clear = True if form['clear'].value else False
 	else:
 		clear = False
-	if "data" in form:
-		if 'round' in form:
-			roundnum = int(form['round'].value)
-		else:
-			roundnum = 0
-		import_data(form["event"].value, form["type"].value, form["data"].value, clear, roundnum)
-	elif 'pairingsurl' in form:
+	if 'round' in form:
+		roundnum = int(form['round'].value)
+	else:
+		roundnum = 0
+	if 'datafile' in form and form['datafile'].value:
+		import_data(form["event"].value, form["type"].value, form['datafile'].file.read(), clear, roundnum)
+	elif 'pairingsurl' in form and form['pairingsurl'].value:
 		importAllDataURL(form['event'].value, form['pairingsurl'].value, clear)
+	elif "data" in form:
+		import_data(form["event"].value, form["type"].value, form["data"].value, clear, roundnum)
 	else:
 		print """
 <div>
-<form method='post'>
+<form method='post' enctype="multipart/form-data">
 	<input type='hidden' name='password' value='%s'/>
 	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
 	Import all data from CFB Event URL: <input type='text' name='pairingsurl' value='%s'/> <input type='submit'/>
 </form>
 </div>
 <div>
-<form method='post'>
+<form method='post' enctype="multipart/form-data">
 	<input type='hidden' name='password' value='%s'/>
 	Enter data:
 	<select name='type'>
@@ -272,13 +400,17 @@ def docgi():
 	</select><br/>
 	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
 	Import round: <input type='text' name='round' value='%s' /><br/>
+	Import from file: <input type='file' name='datafile' /><br/>
 	<textarea name='data' cols='80' rows='20'></textarea><br/>
 	<input type='submit' />
 </form>
 </div>
 <h2>Instructions</h2>
 <p>
-The simplest way to import data for a GP or other event on CFB pairings site is just to put the pairings URL into the top form. That will load all data up until this point, assuming R1 pairings are original decklist tables and all byes are sorted alphabetically. For more complex use cases, use the other forms. You can manually important seatings and then use the URL import to load the pairings.
+The simplest way to import data for a GP or other event on CFB pairings site is just to put the pairings URL into the top form. That will load all data up until this point, assuming R1 pairings are original decklist tables and all byes are sorted alphabetically. For more complex use cases, use the other forms. You can manually important seatings and then use the URL import to load the pairings, as long as you do not use clear.
+</p>
+<p>
+For WER-based events, print pairings-by-name to file as a PDF, open the PDF, select the whole page (ctrl-A), copy and paste them in. Round one pairings will be used as seatings.
 </p>
 <h3>Seatings</h3>
 <p>

@@ -14,21 +14,24 @@ def top_tables(tournament, form):
 			tables = db.get_top_tables(id)
 			with output.table("Table", "Score", "Name", "Previous Checks", "Score", "Name", "Previous Checks") as table:
 				for row in tables:
-					score = row[0]
-					tablenum = row[1]
-					(player1, player2) = db.get_table(id, tablenum)
-					(name1, score1, _, _) = player1
-					(name2, score2, _, _) = player2
-					prevChecks1 = db.getPreviousChecks(id, name1)
-					prevChecks2 = db.getPreviousChecks(id, name2)
-					table.printRow(
-						output.makeLink(form, 'get_table?table=%s'%tablenum, tablenum),
-						score1,
-						output.makeLink(form, 'get_player?name=%s'%name1, name1),
-						", ".join([str(x) for x in prevChecks1]),
-						score2,
-						output.makeLink(form, 'get_player?name=%s'%name2, name2),
-						", ".join([str(x) for x in prevChecks2]))
+					try:
+						score = row[0]
+						tablenum = row[1]
+						(player1, player2) = db.get_table(id, tablenum)
+						(name1, score1, _, _) = player1
+						(name2, score2, _, _) = player2
+						prevChecks1 = db.getPreviousChecks(id, name1)
+						prevChecks2 = db.getPreviousChecks(id, name2)
+						table.printRow(
+							output.makeLink(form, 'get_table?table=%s'%tablenum, tablenum),
+							score1,
+							output.makeLink(form, 'get_player?name=%s'%name1, name1),
+							", ".join([str(x) for x in prevChecks1]),
+							score2,
+							output.makeLink(form, 'get_player?name=%s'%name2, name2),
+							", ".join([str(x) for x in prevChecks2]))
+					except:
+						pass
 
 	except Exception as e:
 		output.printMessage("Failed to print top tables: %s" % (e))

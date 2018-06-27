@@ -65,7 +65,7 @@ def docgi():
 	Enter table number: <input type='text' name='table' /><input type='submit' /><br/>
 	Enter player name: <input type='text' name='player' /><input type='submit' />
 </form>
-"""%form['password'].value if 'password' in form else ''
+"""%(form['password'].value if 'password' in form else '')
 
 	output.printLink(form, 'root', 'Return to menu')
 	print """

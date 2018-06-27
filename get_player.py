@@ -50,7 +50,7 @@ def docgi():
 <p>
 You can enter any fragment of a name, all matches will be returned. Searches are case-insensitive. Typos will not match.
 </p>
-"""%form['password'].value if 'password' in form else ''
+"""%(form['password'].value if 'password' in form else '')
 
 	output.printLink(form, 'root', 'Return to menu')
 	print """

@@ -57,7 +57,7 @@ def docgi():
 			<br/>
 			<input type='submit' value='Mark as checked' />
 			</form>
-""" % form['password'].value if 'password' in form else ''
+""" % (form['password'].value if 'password' in form else '')
 		allchecks(form["event"].value, form)
 	output.printLink(form, 'export?type=checks', 'Download as TSV')
 	output.printLink(form, 'root', 'Return to menu')

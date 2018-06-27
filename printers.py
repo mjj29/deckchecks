@@ -152,7 +152,7 @@ class HTMLOutput(Output):
 		print "<p class='link'>"+self.makeLink(form, link, text)+"</p>" 
 	def createButton(self, form, link, data, text):
 		print "<form action='%s'>" % link
-		print "<input type='hidden' name='password' value='%s'/>" % form['password'].value if 'password' in form else ''
+		print "<input type='hidden' name='password' value='%s'/>" % (form['password'].value if 'password' in form else '')
 		for k in data:
 			print "<input type='hidden' name='%s' value='%s' />" % (k, data[k])
 		print "<input type='submit' value='%s' /></form>" % (text)
