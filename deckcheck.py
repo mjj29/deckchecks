@@ -6,18 +6,19 @@ from login import check_login
 
 output = None
 
-def mark_checked(tournament, table=None, player=None):
+def mark_checked(tournament, table=None, player=None, roundnum=None):
 
 	if table:
 		try:
 			with DeckDB() as db:
 				id = db.getEventId(tournament)
-				(player1, player2) = db.get_table_ids(id, table)
-				round = db.get_round(id)
-				db.insert('deckchecks', [player1, id, round])
-				db.insert('deckchecks', [player2, id, round])
+				if None == roundnum:
+					roundnum = db.get_round(id)
+				(player1, player2) = db.get_table_ids(id, table, roundnum=roundnum)
+				db.insert('deckchecks', [player1, id, roundnum])
+				db.insert('deckchecks', [player2, id, roundnum])
 
-			output.printMessage("Marked table %s as checked in round %s" % (table, round))
+			output.printMessage("Marked table %s as checked in round %s" % (table, roundnum))
 		except Exception as e:
 			output.printMessage("Failed to lookup table %s: %s" % (table, e))
 	elif player:

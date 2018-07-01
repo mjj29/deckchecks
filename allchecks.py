@@ -46,7 +46,7 @@ def docgi():
 	if "tables" in form and form['tables']:
 		deckcheck.output = output
 		for table in form['tables'].value.split():
-			deckcheck.mark_checked(form["event"].value, table=table)
+			deckcheck.mark_checked(form["event"].value, table=table, roundnum=form['round'].value)
 	else:
 		print """
 			<h2>Check tables</h2>
@@ -55,9 +55,11 @@ def docgi():
 			<input type='hidden' name='password' value='%s'/>
 			<textarea name='tables' cols='30' rows='5'></textarea>
 			<br/>
+			<input type='text' name='round' value='%s'/>
+			<br/>
 			<input type='submit' value='Mark as checked' />
 			</form>
-""" % (form['password'].value if 'password' in form else '')
+""" % (form['password'].value if 'password' in form else '', roundnum)
 		allchecks(form["event"].value, form)
 	output.printLink(form, 'export?type=checks', 'Download as TSV')
 	output.printLink(form, 'root', 'Return to menu')

@@ -3,7 +3,7 @@ from deck_mysql import DeckDB
 import sys
 
 print "You didn't want this, it drops the whole database"
-return
+sys.exit(1)
 
 def main(args):
 	tables = [ 
