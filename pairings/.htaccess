@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteRule (.*)/style.css$ /style.css [L]
+RewriteRule (.*)/(.*)$ /$2.py?event=$1 [L,QSA]

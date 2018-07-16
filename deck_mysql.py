@@ -138,6 +138,26 @@ class DeckDB:
 		return checks
 
 
+	def get_pairings(self, tournamentid, roundnum=None):
+		roundnum = roundnum or self.get_round(tournamentid)
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("""
+SELECT lpair.tablenum, lname, lscore, rname, rscore FROM (
+	SELECT name AS lname, players.playerid AS lid, score AS lscore, tablenum
+		FROM players INNER JOIN pairings
+		ON players.playerid=pairings.playerid
+		WHERE pairings.tournamentid=%s AND pairings.round=%s
+) AS lpair INNER JOIN (
+	SELECT name AS rname, players.playerid AS rid, score AS rscore, tablenum 
+		FROM players INNER JOIN pairings ON players.playerid=pairings.playerid
+		WHERE pairings.tournamentid=%s AND pairings.round=%s
+) AS rpair
+ON lpair.tablenum=rpair.tablenum AND lid!=rid
+ORDER BY lname
+""", (tournamentid, roundnum, tournamentid, roundnum))
+			return cur.fetchall()
+
+
 	def get_top_tables(self, tournamentid, roundnum=None):
 		roundnum = roundnum or self.get_round(tournamentid)
 		with DeckCursor(self.db.cursor()) as cur:
