@@ -21,6 +21,9 @@ h1 {
 .menu * {
 	display: inline;
 }
+.links * {
+	display: inline;
+}
 
 a:link {
 	color: 88c;
