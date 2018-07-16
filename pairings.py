@@ -11,12 +11,12 @@ from login import check_login
 
 output = None
 
-def pairings(tournament):
+def pairings(tournament, roundnum=None):
 
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			pairings = db.get_pairings(id)
+			pairings = db.get_pairings(id, roundnum)
 			with output.table("Table", "Name", "Score", "Name", "Score") as table:
 				for row in pairings:
 					try:
@@ -37,13 +37,19 @@ def docgi():
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
-		roundnum = db.get_round(db.getEventId(form["event"].value))
+		maxrounds = db.get_round(db.getEventId(form["event"].value))
+		roundnum = int(form['round'].value) if 'round' in form else maxrounds
 		print "<h1>Pairings for %s round %s</h1>" % (db.getEventName(form['event'].value), roundnum)
 		output.pageHeader(db, form['event'].value, roundnum, form)
 	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'top_tables'):
 		return
-	pairings(form["event"].value)
-	output.printLink(form, 'export?type=pairings', 'Download as TSV')
+	print '<div class="links">|'
+	for i in range(1, maxrounds+1):
+		print output.makeLink(form, 'pairings?round=%s'%i, str(i))
+		print '|'
+	print '</div>'
+	pairings(form["event"].value, roundnum)
+	output.printLink(form, 'export?type=pairings&amp;round=%s'%roundnum, 'Download as TSV')
 	output.printLink(form, 'root', 'Return to menu')
 	print """
 		</body>

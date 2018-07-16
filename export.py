@@ -5,7 +5,8 @@ from printers import TSVOutput, TextOutput
 import top_tables, allchecks, pairings
 
 def docgi():
-	print """Content-type: text/csv
+	print """Content-type: text/tab-separated-values
+Content-disposition: attachment; filename=data.tsv
 
 """ 
 	form = cgi.FieldStorage()
@@ -20,7 +21,7 @@ def docgi():
 			allchecks.allchecks(form["event"].value, {})
 		elif "pairings" == form['type'].value:
 			pairings.output = TSVOutput()
-			pairings.pairings(form["event"].value)
+			pairings.pairings(form["event"].value, int(form['round'].value) if 'round' in form else None)
 		else:
 			print "ERROR: type must be top, pairings or checks"
 	else:
