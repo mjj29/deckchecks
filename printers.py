@@ -170,6 +170,8 @@ class HTMLOutput(Output):
 		print " | "
 		print self.makeLink(form, 'allchecks', 'checks')
 		print " | "
+		print self.makeLink(form, 'pairings', 'pairings')
+		print " | "
 		print self.makeLink(form, 'import', 'update')
 		print " | "
 		print self.makeLink(form, 'settings', 'settings')

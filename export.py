@@ -2,7 +2,7 @@
 import csv, sys, cgitb, os, cgi
 from deck_mysql import DeckDB
 from printers import TSVOutput, TextOutput
-import top_tables, allchecks
+import top_tables, allchecks, pairings
 
 def docgi():
 	print """Content-type: text/csv
@@ -14,12 +14,15 @@ def docgi():
 	if 'type' in form and form['type']:
 		if "top" == form['type'].value:
 			top_tables.output = TSVOutput()
-			top_tables.top_tables(form["event"].value)
+			top_tables.top_tables(form["event"].value, {})
 		elif "checks" == form['type'].value:
 			allchecks.output = TSVOutput()
-			allchecks.allchecks(form["event"].value)
+			allchecks.allchecks(form["event"].value, {})
+		elif "pairings" == form['type'].value:
+			pairings.output = TSVOutput()
+			pairings.pairings(form["event"].value)
 		else:
-			print "ERROR: type must be top or checks"
+			print "ERROR: type must be top, pairings or checks"
 	else:
 		print "ERROR: must specify type"
 
