@@ -19,7 +19,7 @@ class DeckDB:
 		'players':['name', 'country', 'tournamentid'],
 		'deckchecks':['playerid', 'tournamentid', 'round'],
 		'round':['roundnum', 'tournamentid'],
-		'tournaments':['name', 'url', 'rounds', 'password'],
+		'tournaments':['name', 'url', 'rounds', 'password', 'pairings'],
 	}
 
 	def __init__(self):
@@ -85,9 +85,15 @@ class DeckDB:
 				rows = cur.fetchall()
 				return int(rows[0][0])
 
+	def hasEventPairings(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT pairings FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return True if rows[0][0] else False
+
 	def getEventSettings(self, eventid):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name, url, rounds, password FROM tournaments WHERE tournamentid=%s", eventid)
+			cur.execute("SELECT name, url, rounds, password, pairings FROM tournaments WHERE tournamentid=%s", eventid)
 			rows = cur.fetchall()
 			return rows[0]
 

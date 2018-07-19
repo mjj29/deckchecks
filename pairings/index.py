@@ -23,7 +23,8 @@ print """Content-type: text/html
 """
 with DeckDB() as db:
 	for row in db.get_events():
-		print "<li><b><a href='%s/pairings'>%s</a></b></li>" % (row[0],row[1])
+		if db.hasEventPairings(row[0]):
+			print "<li><b><a href='%s/pairings'>%s</a></b></li>" % (row[0],row[1])
 print """
 	</ul>
 </body>

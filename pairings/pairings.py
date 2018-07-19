@@ -37,6 +37,8 @@ def docgi():
 	form = cgi.FieldStorage()
 	with DeckDB() as db:
 		db.checkEvent(form["event"].value, output)
+		hasPairings = db.hasEventPairings(db.getEventId(form["event"].value))
+		if not hasPairings: raise Exception("Pairings not enabled for this event")
 		maxrounds = db.get_round(db.getEventId(form["event"].value))
 		roundnum = int(form['round'].value) if 'round' in form else maxrounds
 		print "<h1>Pairings for %s round %s</h1>" % (db.getEventName(form['event'].value), roundnum)
