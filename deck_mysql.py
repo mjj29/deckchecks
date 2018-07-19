@@ -1,4 +1,5 @@
 import MySQLdb, sys, random
+from mysql_passwords import database, user, password
 
 class DeckCursor:
 	def __init__(self, cur):
@@ -10,9 +11,6 @@ class DeckCursor:
 
 class DeckDB:
 	
-	database = 'deckchecks'
-	user = 'deckchecks'
-	password = 'Sans1orbia'
 	schema = {
 		'pairings':['playerid', 'round', 'score', 'tablenum', 'tournamentid'],
 		'seatings':['playerid', 'buildtable', 'tournamentid'],
