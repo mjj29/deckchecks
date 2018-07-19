@@ -21,7 +21,7 @@ class DeckDB:
 	}
 
 	def __init__(self):
-		self.db = MySQLdb.connect(host='localhost', user=self.user, passwd=self.password, db=self.database)
+		self.db = MySQLdb.connect(host='localhost', user=user, passwd=password, db=database)
 
 	def __enter__(self):
 		return self
