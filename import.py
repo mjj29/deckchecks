@@ -11,14 +11,17 @@ def insertSeating(db, eventid, table, player):
 
 	(name, country, score) = player
 	try:
-		db.insert('players', (name, country, eventid))
+		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	except:
-		pass
-	idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
+		db.insert('players', (name, country, eventid))
+		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	try:
 		db.insert('seatings', (idn, table, eventid))
 	except:
-		pass
+		try:
+			db.update('seatings', {'playerid':idn, 'tournamentid':eventid}, {'buildtable':table})
+		except Exception as e:
+			output.printMessage('Failed to add or update seating for %s (%s)' % (name, e))
 
 
 def insertPairing(db, eventid, roundnum, table, player):
@@ -29,7 +32,12 @@ def insertPairing(db, eventid, roundnum, table, player):
 		try:
 			db.insert('players', (name, country, eventid))
 			idn = db.find('players', {'name':name, 'tournamentid':eventid})[0]
-			db.insert('seatings', (idn, 0, eventid))
+			if int(roundnum) == 1:
+				output.printMessage("Adding player to seatings at table %s" % table)
+				db.insert('seatings', (idn, table, eventid))
+			else:
+				output.printMessage("Adding player as bye in round %s" % roundnum)
+				db.insert('seatings', (idn, 0, eventid))
 		except Exception as e:
 			output.printMessage("Failed to add player %s (%s)" % (str(player), e))
 
@@ -129,7 +137,6 @@ def parseRow(row, wltr):
 			return (table, (name1, country1, score1), None)
 
 def import_seatings_reader(event, reader, clear):
-	print "import_seatings_reader"
 	count = 0
 	with DeckDB() as db:
 		id = db.getEventId(event)
@@ -315,23 +322,33 @@ def import_pairings_file(event, pairingsFile, clear, roundnum):
 
 def import_seatings_data(event, seatData, clear):
 	if seatData.startswith('%PDF'):
+		output.printMessage("Importing as PDF")
 		import_round_pdf(event, seatData, clear, 0, seatings=True)
-	else:
+	elif '\t' in seatData:
+		output.printMessage("Importing as tab-separated")
 		reader = csv.reader(seatData.split('\n'), delimiter='\t')
+		import_seatings_reader(event, reader, clear)
+	else:
+		output.printMessage("Importing as comma-separated")
+		reader = csv.reader(seatData.split('\n'))
 		import_seatings_reader(event, reader, clear)
 
 
 def import_pairings_data(event, pairingData, clear, roundnum):
 	if pairingData.startswith('<'):
+		output.printMessage("Importing as XML")
 		import_all_xml(event, pairingData, clear)
 		return
 	elif pairingData.startswith('%PDF'):
+		output.printMessage("Importing as PDF")
 		import_round_pdf(event, pairingData, clear, roundnum, seatings=False)
 		return
 	elif '\t' in pairingData:
+		output.printMessage("Importing as tab-separated")
 		reader = csv.reader(pairingData.split('\n'), delimiter='\t')
 		wltr=False
 	else:
+		output.printMessage("Importing as comma-separated")
 		reader = csv.reader(pairingData.split('\n'))
 		wltr=True
 	import_pairings_reader(event, reader, clear, roundnum, wltr)

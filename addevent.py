@@ -8,7 +8,7 @@ output = None
 def addevent(event, url):
 	with DeckDB() as db:
 		try:
-			db.insert('tournaments', [event, url, 15, ''])
+			db.insert('tournaments', [event, url, 15, '', False])
 			id = db.getEventId(event)
 			db.insert('round', [0, id])
 		except Exception as e:
