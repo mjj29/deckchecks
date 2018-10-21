@@ -130,7 +130,12 @@ class HTMLOutput(Output):
 		print "<td>%s</td>%s<td><b>"%(score, tablelinks)
 		print self.makeLink(form, 'get_table?table=%s'%build, build)
 		print "</b></td><td>%s</td><td>" % (", ".join([str(x) for x in prevChecks]))
-		self.createButton(form, 'deckcheck', {'player':name}, 'Check this player')
+		if db.isEventTeam(eventid):
+			self.createButton(form, 'deckcheck', {'player':name, 'seat':'0'}, 'Check Seat A')
+			self.createButton(form, 'deckcheck', {'player':name, 'seat':'1'}, 'Check Seat B')
+			self.createButton(form, 'deckcheck', {'player':name, 'seat':'2'}, 'Check Seat C')
+		else:
+			self.createButton(form, 'deckcheck', {'player':name}, 'Check this player')
 		print "</td></tr>"
 
 	def heading(self, text):

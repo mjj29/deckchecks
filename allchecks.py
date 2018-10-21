@@ -13,17 +13,17 @@ def allchecks(tournament, form):
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
 			maxrounds = db.get_round(id)
-
 			headers = output.getHeaders(maxrounds)
 
 			checks = db.get_all_checks(id)
 			for rn in reversed(sorted(checks.keys())):
 				output.heading("Round %s"%rn)
 				with output.table(*headers) as table:
-					for name in checks[rn]:
+					names = set([name for (name, seat) in checks[rn]])
+					for name in names:
 						players = db.get_players(id, name)
 						for p in players:
-								output.printPlayer(p, db, id, form)
+							output.printPlayer(p, db, id, form)
 
 	except Exception as e:
 		output.printMessage("Failed to print check history: %s" % (e))
@@ -46,11 +46,20 @@ def docgi():
 	if "tables" in form and form['tables']:
 		deckcheck.output = output
 		for table in form['tables'].value.split():
-			deckcheck.mark_checked(form["event"].value, table=table, roundnum=form['round'].value)
+			if ':' in table:
+				(table, seat) = table.split(':')
+				seat = seat.strip().lower()
+				if 'a' == seat: seat = 0
+				elif 'b' == seat: seat = 1
+				elif 'c' == seat: seat = 2
+				else: raise Exception("Seat must be A, B or C")
+				deckcheck.mark_checked(form["event"].value, table=table, seat=seat, roundnum=form['round'].value)
+			else:
+				deckcheck.mark_checked(form["event"].value, table=table, roundnum=form['round'].value)
 	else:
 		print """
 			<h2>Check tables</h2>
-			<p>Enter one table per line</p>
+			<p>Enter one table per line (table number for individual, table:seat for team (eg '7:A')</p>
 			<form>
 			<input type='hidden' name='password' value='%s'/>
 			<textarea name='tables' cols='30' rows='5'></textarea>

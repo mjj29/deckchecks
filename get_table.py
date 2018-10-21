@@ -13,7 +13,12 @@ def print_table(tournament, tablenumber, form):
 			maxrounds = db.get_round(id)
 			headers = output.getHeaders(maxrounds)
 
-			output.createButton(form, "deckcheck", {"table": tablenumber}, "Check table this round")
+			if db.isEventTeam(tournament):
+				output.createButton(form, "deckcheck", {"table": tablenumber, 'seat':'0'}, "Check Seat A this round")
+				output.createButton(form, "deckcheck", {"table": tablenumber, 'seat':'1'}, "Check Seat B this round")
+				output.createButton(form, "deckcheck", {"table": tablenumber, 'seat':'2'}, "Check Seat C this round")
+			else:
+				output.createButton(form, "deckcheck", {"table": tablenumber}, "Check table this round")
 
 			for r in range(maxrounds, 0, -1):
 				try:

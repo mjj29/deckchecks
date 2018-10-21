@@ -15,13 +15,14 @@ class DeckDB:
 		'pairings':['playerid', 'round', 'score', 'tablenum', 'tournamentid'],
 		'seatings':['playerid', 'buildtable', 'tournamentid'],
 		'players':['name', 'country', 'tournamentid'],
-		'deckchecks':['playerid', 'tournamentid', 'round'],
+		'deckchecks':['playerid', 'teamplayer', 'tournamentid', 'round'],
 		'round':['roundnum', 'tournamentid'],
-		'tournaments':['name', 'url', 'rounds', 'password', 'pairings'],
+		'tournaments':['name', 'url', 'rounds', 'password', 'pairings', 'team'],
 	}
 
 	def __init__(self):
 		self.db = MySQLdb.connect(host='localhost', user=user, passwd=password, db=database)
+		self.seatletters=['A','B','C']
 
 	def __enter__(self):
 		return self
@@ -83,6 +84,12 @@ class DeckDB:
 				rows = cur.fetchall()
 				return int(rows[0][0])
 
+	def isEventTeam(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT team FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return True if rows[0][0] else False
+
 	def hasEventPairings(self, eventid):
 		with DeckCursor(self.db.cursor()) as cur:
 			cur.execute("SELECT pairings FROM tournaments WHERE tournamentid=%s", eventid)
@@ -91,7 +98,7 @@ class DeckDB:
 
 	def getEventSettings(self, eventid):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name, url, rounds, password, pairings FROM tournaments WHERE tournamentid=%s", eventid)
+			cur.execute("SELECT name, url, rounds, password, pairings, team FROM tournaments WHERE tournamentid=%s", eventid)
 			rows = cur.fetchall()
 			return rows[0]
 
@@ -130,7 +137,7 @@ class DeckDB:
 
 	def get_all_checks(self, event):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT round, name FROM deckchecks INNER JOIN players ON deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s ORDER BY round DESC", event)
+			cur.execute("SELECT round, name, teamplayer FROM deckchecks INNER JOIN players ON deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s ORDER BY round DESC", event)
 			rows = cur.fetchall()
 			currentround = 0
 			checks = {}
@@ -138,7 +145,7 @@ class DeckDB:
 				if row[0] != currentround:
 					currentround = row[0]
 					checks[currentround] = []
-				checks[currentround].append(row[1])
+				checks[currentround].append((row[1], row[2]))
 		return checks
 
 
@@ -156,7 +163,7 @@ SELECT lpair.tablenum, lname, lscore, rname, rscore FROM (
 		FROM players INNER JOIN pairings ON players.playerid=pairings.playerid
 		WHERE pairings.tournamentid=%s AND pairings.round=%s
 ) AS rpair
-ON lpair.tablenum=rpair.tablenum AND lid!=rid
+ON lpair.tablenum=rpair.tablenum AND lid!=rid and lpair.tablenum != 0
 ORDER BY lname
 """, (tournamentid, roundnum, tournamentid, roundnum))
 			return cur.fetchall()
@@ -248,9 +255,12 @@ ORDER BY lname
 
 	def getPreviousChecks(self, tournamentid, name):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT deckchecks.round FROM deckchecks INNER JOIN players on deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s AND players.name=%s", (tournamentid, name))
+			cur.execute("SELECT deckchecks.round, deckchecks.teamplayer FROM deckchecks INNER JOIN players on deckchecks.playerid=players.playerid WHERE deckchecks.tournamentid=%s AND players.name=%s", (tournamentid, name))
 			rows = cur.fetchall()
-			return [row[0] for row in rows]
+			if self.isEventTeam(tournamentid):
+				return ["%s:%s" % (row[0],self.seatletters[row[1]]) for row in rows]
+			else:
+				return [row[0] for row in rows]
 
 
 

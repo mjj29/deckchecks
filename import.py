@@ -103,22 +103,32 @@ def importAllDataURL(event, pairingsurl, clear):
 
 def parseRow(row, wltr):
 	# wltr = "Table","Player 1","Country","Points","Player 2","Country","Points"
+	# wltr teams = "Table","Player 1","Points","Player 2","Points"
 	# pairings.cfb = Table	Player 1	Score	Player2
 	if wltr:
 		if "-" == row[0]:
 			name1 = row[1].strip()
 			country1 = row[2]
-			score1 = int(row[3])
+			try:
+				score1 = int(row[3])
+			except:
+				score1 = 0
 			return (0, (name1, country1, score1), None)
 		else:
 			table = int(row[0])
 			name1 = row[1].strip()
 			country1 = row[2]
-			score1 = int(row[3])
+			try:
+				score1 = int(row[3])
+			except:
+				score1 = 0
 			try:
 				name2 = row[4].strip()
 				country2 = row[5]
-				score2 = int(row[6])
+				try:
+					score2 = int(row[6])
+				except:
+					score2 = 0
 
 				return (table, (name1, country1, score1), (name2, country2, score2))
 			except Exception as e:
@@ -350,7 +360,7 @@ def import_pairings_data(event, pairingData, clear, roundnum):
 	else:
 		output.printMessage("Importing as comma-separated")
 		reader = csv.reader(pairingData.split('\n'))
-		wltr=True
+		wltr = 'Country' in pairingData.split('\n')[0]
 	import_pairings_reader(event, reader, clear, roundnum, wltr)
 
 def import_data(event, dtype, data, clear, roundnum):
@@ -403,7 +413,7 @@ def docgi():
 <div>
 <form method='post' enctype="multipart/form-data">
 	<input type='hidden' name='password' value='%s'/>
-	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
+	Clear data: <input type='checkbox' name='clear' value='true' /> [resets all tournament data including checks]<br/>
 	Import all data from CFB Event URL: <input type='text' name='pairingsurl' value='%s'/> <input type='submit'/>
 </form>
 </div>
@@ -415,7 +425,7 @@ def docgi():
 		<option value='pairings' selected='true'>Pairings</option>
 		<option value='seatings'>Seatings</option>
 	</select><br/>
-	Clear data: <input type='checkbox' name='clear' value='true' /><br/>
+	Clear data: <input type='checkbox' name='clear' value='true' />[if importing seating resets all tournament data including checks]<br/>
 	Import round: <input type='text' name='round' value='%s' /><br/>
 	Import from file: <input type='file' name='datafile' /><br/>
 	<textarea name='data' cols='80' rows='20'></textarea><br/>

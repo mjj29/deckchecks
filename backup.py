@@ -2,18 +2,19 @@
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
 import csv, sys, os, cgi, cgitb, subprocess
+from mysql_passwords import database, user, password
 
 output = None
 
 def createbackup(filename):
 	with DeckDB() as db:
-		args=['mysqldump', '-u', db.user, '--password='+db.password, db.database]
+		args=['mysqldump', '-u', user, '--password='+password, database]
 		with open(filename, 'w') as f:
 			subprocess.check_call(args, stdout=f)
 
 def restorebackup(filename):
 	with DeckDB() as db:
-		args=['mysql', '-u', db.user, '--password='+db.password, '-D', db.database]
+		args=['mysql', '-u', user, '--password='+password, '-D', database]
 		with open(filename) as f:
 			subprocess.check_call(args, stdin=f)
 

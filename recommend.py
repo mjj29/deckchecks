@@ -15,7 +15,12 @@ def recommend_checks(tournament, form):
 			headers = output.getHeaders(maxrounds)
 			for (tablenumber, player1, player2) in tables:
 				output.heading("Table %s"%tablenumber)
-				output.createButton(form, "deckcheck", {"table":tablenumber}, "Checked this round")
+				if db.isEventTeam(tournament):
+					output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'0'}, "Checked Seat A this round")
+					output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'1'}, "Checked Seat B this round")
+					output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'2'}, "Checked Seat C this round")
+				else:
+					output.createButton(form, "deckcheck", {"table":tablenumber}, "Checked this round")
 				with output.table(*headers):
 					output.printPlayer(player1, db, id, form)
 					output.printPlayer(player2, db, id, form)
