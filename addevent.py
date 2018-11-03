@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
-import csv, sys, os, cgi, cgitb, urllib2, bs4
+import csv, sys, os, cgi, cgitb, urllib2, bs4, re
 
 output = None
 
@@ -30,20 +30,34 @@ def docgi():
 	form = cgi.FieldStorage()
 	if 'name' in form:
 		addevent(form['name'].value, form['url'].value if 'url' in form else '')
-	else:
-		with DeckDB() as db:
-			events = {}
-			for ev in db.get_events():
-				events[ev[1]] = ev[2]
+	with DeckDB() as db:
+		events = {}
+		for ev in db.get_events():
+			events[ev[1]] = ev[2]
 
-		for div in soup.find_all('div', class_='row'):
-			for link in div.find_all('a'):
-				name=link.get_text()
-				target = link['href']
-				if name in events:
-					print "<li>Event %s already imported</li>" % name
-				else:
-					print "<li><a href='addevent?name=%s&amp;url=%s'>Import %s</a></li>" % (name, target, name)
+	for div in soup.find_all('div', class_='row'):
+		for link in div.find_all('a'):
+			name=link.get_text()
+			target = link['href']
+			if name in events:
+				print "<li>Event %s already imported</li>" % name
+			else:
+				print "<li><a href='addevent?name=%s&amp;url=%s'>Import %s</a></li>" % (name, target, name)
+	print """
+	</ul>
+	<h2>Add event from mtgpairings.com</h2>
+	<ul>
+"""
+	html = urllib2.urlopen('http://mtgpairings.com/Event')
+	soup = bs4.BeautifulSoup(html)
+	for tr in soup.find_all('tr', onclick=re.compile('.*location.href.*')):
+		tds = tr.find_all('td')
+		name = "%s (%s, %s players)" % (tds[0].string.strip(), tds[1].string.strip(), tds[2].string.strip())
+		target = 'http://mtgpairings.com'+re.sub(".*'(.*)'", r'\1', tr['onclick'])
+		if name in events:
+			print "<li>Event %s already imported</li>" % name
+		else:
+			print "<li><a href='addevent?name=%s&amp;url=%s'>Import %s</a></li>" % (name, target, name)
 	print """
 	</ul>
 	<h2>Add an event manually</h2>

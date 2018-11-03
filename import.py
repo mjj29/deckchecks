@@ -66,40 +66,76 @@ def importAllDataURL(event, pairingsurl, clear):
 			db.deleteRow('seatings', {'tournamentid':id})
 			db.deleteRow('players', {'tournamentid':id})
 
-		while True:
-			rnd = rnd + 1
-			html = urllib2.urlopen(pairingsurl+'/'+str(rnd)).read()
+		if 'channelfireball' in pairingsurl:
+			while True:
+				rnd = rnd + 1
+				html = urllib2.urlopen(pairingsurl+'/'+str(rnd)).read()
 
+				soup =  bs4.BeautifulSoup(html)
+
+				table = soup.find('table')
+				if not table: break
+				output.printMessage("Importing data for round %s" % rnd)
+				sys.stdout.flush()
+				counter = 0
+				for row in table.find_all('tr'):
+					(table, name, points, opponent) = row.find_all('td')[0:4]
+					try:
+						table = int(table.get_text())
+						player = (name.get_text(), '', int(points.get_text()))
+						if rnd == 1:
+							insertSeating(db, id, table, player)
+						insertPairing(db, id, rnd, table, player)
+					except Exception as e:
+						try:
+							output.printMessage("Failed to import row: %s: %s" % (row.get_text(), e))
+						except:
+							output.printMessage('Failed to import row: %s' % e)
+					counter = counter + 1
+				output.printMessage("Imported %d pairings" % counter)
+				sys.stdout.flush()
+			rnd = rnd - 1
+			output.printMessage("Imported %d rounds" % rnd)
+			try:
+				db.deleteRow('round', {'tournamentid':id})
+				db.insert('round', [rnd, id])
+			except Exception as e:
+				output.printMessage("Failed to update current round number: %s" % e)
+		elif 'mtgpairings' in pairingsurl:
+			
+			html = urllib2.urlopen(pairingsurl).read()
 			soup =  bs4.BeautifulSoup(html)
 
-			table = soup.find('table')
-			if not table: break
-			output.printMessage("Importing data for round %s" % rnd)
-			sys.stdout.flush()
-			counter = 0
-			for row in table.find_all('tr'):
-				(table, name, points, opponent) = row.find_all('td')[0:4]
-				try:
-					table = int(table.get_text())
-					player = (name.get_text(), '', int(points.get_text()))
-					if rnd == 1:
-						insertSeating(db, id, table, player)
-					insertPairing(db, id, rnd, table, player)
-				except Exception as e:
+			for td in soup.find_all('td', onclick=re.compile('.*/Round/View')):
+				if 'Round' in td.string:
+					rnd = int(re.sub('Round', '', td.string).strip())
+					url = 'http://mtgpairings.com'+re.sub(".*'(.*)'", r'\1', td['onclick'])
 					try:
-						output.printMessage("Failed to import row: %s: %s" % (row.get_text(), e))
+						html2 = urllib2.urlopen(url).read()
+						soup2 = bs4.BeautifulSoup(html2)
+						counter = 0
+						for tr in soup2.find_all('tr'):
+							tds = tr.find_all('td')
+							try:
+								table=int(tds[0].string.strip())
+								player = (tds[1].string.strip(), '', int(tds[2].string.strip()))
+								if rnd == 1:
+									insertSeating(db, id, table, player)
+								insertPairing(db, id, rnd, table, player)
+								counter = counter + 1
+							except:
+								output.printMessage('Failed to import row %s' % str(tds))
+						output.printMessage('Imported %d pairings' % counter)
 					except:
-						output.printMessage('Failed to import row: %s' % e)
-				counter = counter + 1
-			output.printMessage("Imported %d pairings" % counter)
-			sys.stdout.flush()
-		rnd = rnd - 1
-		output.printMessage("Imported %d rounds" % rnd)
-		try:
-			db.deleteRow('round', {'tournamentid':id})
-			db.insert('round', [rnd, id])
-		except Exception as e:
-			output.printMessage("Failed to update current round number: %s" % e)
+						output.printMessage('Failed to read round data for round %s from %s' % (rnd, url))
+			output.printMessage('Imported %d rounds' % rnd)
+			try:
+				db.deleteRow('round', {'tournamentid':id})
+				db.insert('round', [rnd, id])
+			except Exception as e:
+				output.printMessage("Failed to update current round number: %s" % e)
+		else:
+			raise Exception("Unknown pairings site: %s" % pairingsurl)
 
 def parseRow(row, wltr):
 	# wltr = "Table","Player 1","Country","Points","Player 2","Country","Points"
@@ -435,6 +471,9 @@ def docgi():
 <h2>Instructions</h2>
 <p>
 The simplest way to import data for a GP or other event on CFB pairings site is just to put the pairings URL into the top form. That will load all data up until this point, assuming R1 pairings are original decklist tables and all byes are sorted alphabetically. For more complex use cases, use the other forms. You can manually important seatings and then use the URL import to load the pairings, as long as you do not use clear.
+</p>
+<p>
+There is also support for using mtgpairings.com to import from a URL. Put the event page URL into the URL dialog. This is the simplest way to import data for WER-based events.
 </p>
 <p>
 For WER-based events, print pairings-by-name to file as a PDF, open the PDF, select the whole page (ctrl-A), copy and paste them in. Round one pairings will be used as seatings.
