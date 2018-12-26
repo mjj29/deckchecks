@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
+from cfb import getCFBShows
 import csv, sys, os, cgi, cgitb, urllib2, bs4, re
 
 output = None
@@ -58,6 +59,21 @@ def docgi():
 			print "<li>Event %s already imported</li>" % name
 		else:
 			print "<li><a href='addevent?name=%s&amp;url=%s'>Import %s</a></li>" % (name, target, name)
+	print """
+	</ul>
+	<h2>Add an event from CFB API</h2>
+	<ul>
+"""
+	shows = getCFBShows()
+	for show in shows:
+		print "<li><b>%s</b><ul>" % show.getName()
+		for tournament in show.getTournaments():
+			if tournament.getPairingsURL():
+				if tournament.getName()+' at '+show.getName() in events:
+					print "<li>%s already imported</li>" % (tournament.getName())
+				else:
+					print "<li><a href='addevent?name=%s&amp;url=%s'>Import %s</a></li>" % (tournament.getName()+'%20at%20'+show.getName(), tournament.getPairingsURL(), tournament.getName())
+		print "</ul></li>"
 	print """
 	</ul>
 	<h2>Add an event manually</h2>

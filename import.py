@@ -4,6 +4,7 @@ from printers import HTMLOutput, TextOutput
 import csv, sys, os, cgi, cgitb, urllib2, bs4, subprocess, re
 from login import check_login
 import xml.etree.ElementTree as ET
+from cfb import CFBTournament
 
 output = None
 
@@ -66,7 +67,22 @@ def importAllDataURL(event, pairingsurl, clear):
 			db.deleteRow('seatings', {'tournamentid':id})
 			db.deleteRow('players', {'tournamentid':id})
 
-		if 'channelfireball' in pairingsurl:
+		if 'json' in pairingsurl:
+			t = CFBTournament({'id':id,'name':event,'pairings_url':pairingsurl})
+			rnd = t.getRound()
+			count = 0
+			for (_, table, player) in t.getPairings():
+				if rnd == 1:
+					insertSeating(db, id, table, player)
+				insertPairing(db, id, rnd, table, player)
+				count = count + 1
+			output.printMessage('Imported %d players in round %d' % (count, rnd))
+			try:
+				db.deleteRow('round', {'tournamentid':id})
+				db.insert('round', [rnd, id])
+			except Exception as e:
+				output.printMessage("Failed to update current round number: %s" % e)
+		elif 'channelfireball' in pairingsurl:
 			while True:
 				rnd = rnd + 1
 				html = urllib2.urlopen(pairingsurl+'/'+str(rnd)).read()
