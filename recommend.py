@@ -44,12 +44,12 @@ def docgi():
 		output.pageHeader(db, form['event'].value, roundnum, form)
 	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'recommend'):
 		return
-	recommend_checks(form["event"].value, form)
 	print """
 		<p>
 			Note: recommendations are currently completely random
 		</p>
 	"""
+	recommend_checks(form["event"].value, form)
 	output.printLink(form, 'root', 'Return to menu')
 	print """
 		</body>

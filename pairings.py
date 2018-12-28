@@ -41,7 +41,7 @@ def docgi():
 		roundnum = int(form['round'].value) if 'round' in form else maxrounds
 		print "<h1>Pairings for %s round %s</h1>" % (db.getEventName(form['event'].value), roundnum)
 		output.pageHeader(db, form['event'].value, roundnum, form)
-	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'top_tables'):
+	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'pairings'):
 		return
 	print '<div class="links">|'
 	for i in range(1, maxrounds+1):
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 		docgi()
 	else:
 		if len(sys.argv) < 2:
-			print "Usage: top_tables.py <event>"
+			print "Usage: pairings.py <event>"
 			sys.exit(1)
 		
 		output = TextOutput()

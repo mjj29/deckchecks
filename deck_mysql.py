@@ -17,7 +17,7 @@ class DeckDB:
 		'players':['name', 'country', 'tournamentid'],
 		'deckchecks':['playerid', 'teamplayer', 'tournamentid', 'round'],
 		'round':['roundnum', 'tournamentid'],
-		'tournaments':['name', 'url', 'rounds', 'password', 'pairings', 'team'],
+		'tournaments':['name', 'url', 'rounds', 'password', 'pairings', 'team', 'decklisturl'],
 	}
 
 	def __init__(self):
@@ -98,7 +98,7 @@ class DeckDB:
 
 	def getEventSettings(self, eventid):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT name, url, rounds, password, pairings, team FROM tournaments WHERE tournamentid=%s", eventid)
+			cur.execute("SELECT name, url, rounds, password, pairings, team, decklisturl FROM tournaments WHERE tournamentid=%s", eventid)
 			rows = cur.fetchall()
 			return rows[0]
 
@@ -121,6 +121,13 @@ class DeckDB:
 			cur.execute("SELECT rounds FROM tournaments WHERE tournamentid=%s", eventid)
 			rows = cur.fetchall()
 			return int(rows[0][0])
+
+
+	def getDecklistUrl(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT decklisturl FROM tournaments WHERE tournamentid=%s", eventid)
+			rows = cur.fetchall()
+			return rows[0][0]
 
 
 	def getEventUrl(self, eventid):
@@ -246,6 +253,12 @@ ORDER BY lname
 			for i in range(c, currentround):
 				rv.append('-')
 		return rv
+
+	def getAllPlayers(self, tournamentid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT name, buildtable FROM players INNER JOIN seatings on players.playerid=seatings.playerid WHERE players.tournamentid=%s"%tournamentid)
+			rows = cur.fetchall()
+		return [(row[0], row[1]) for row in rows]
 
 	def get_players(self, tournamentid, name):
 		with DeckCursor(self.db.cursor()) as cur:

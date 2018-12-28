@@ -6,11 +6,11 @@ from login import check_login
 
 output = None
 
-def update_settings(tournament, name, url, rounds, password, pairings, team):
+def update_settings(tournament, name, url, rounds, password, pairings, team, decklisturl):
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			db.update('tournaments', {'tournamentid':id}, {'name':name, 'url':url, 'rounds':rounds, 'password':password, 'pairings':'1' if pairings else '0', 'team':'1' if team else '0'})
+			db.update('tournaments', {'tournamentid':id}, {'name':name, 'url':url, 'rounds':rounds, 'password':password, 'pairings':'1' if pairings else '0', 'team':'1' if team else '0', 'decklisturl':decklisturl})
 			output.printMessage('Tournament settings updated')
 
 	except Exception as e:
@@ -21,13 +21,14 @@ def print_settings(tournament):
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			(name, url, rounds, password, pairings, team) = db.getEventSettings(id)
+			(name, url, rounds, password, pairings, team, decklisturl) = db.getEventSettings(id)
 			output.printMessage('Event name = %s' % name)
 			output.printMessage('Event url = %s' % url)
 			output.printMessage('Event max rounds = %s' % rounds)
 			output.printMessage('Event password = %s' % password)
 			output.printMessage('Event pairings = %s' % pairings)
 			output.printMessage('Event team = %s' % team)
+			output.printMessage('Event decklisturl = %s' % decklisturl)
 	except Exception as e:
 		output.printMessage('Failed to get settings: %s' % e)
 
@@ -49,11 +50,11 @@ def docgi():
 		return
 	if 'name' in form:
 	
-		update_settings(form['event'].value, form['name'].value, form['url'].value if 'url' in form else '', form['rounds'].value if 'rounds' in form else '', form['newpassword'].value if 'newpassword' in form else '', form['pairings'].value if 'pairings' in form else '', form['team'].value if 'team' in form else '')
+		update_settings(form['event'].value, form['name'].value, form['url'].value if 'url' in form else '', form['rounds'].value if 'rounds' in form else '', form['newpassword'].value if 'newpassword' in form else '', form['pairings'].value if 'pairings' in form else '', form['team'].value if 'team' in form else '', form['decklisturl'].value if 'decklisturl' in form else '')
 	else:
 		with DeckDB() as db:
 			id = db.getEventId(form['event'].value)
-			(name, url, rounds, password, pairings, team) = db.getEventSettings(id)
+			(name, url, rounds, password, pairings, team, decklisturl) = db.getEventSettings(id)
 		print """
 <p>Update settings:</p>
 <form method='post'>
@@ -64,9 +65,10 @@ Rounds: <input type='text' name='rounds' value='%s'/><br/>
 Password: <input type='text' name='newpassword' value='%s'/><br/>
 Pairings: <input type='checkbox' name='pairings' %s/><br/>
 Team: <input type='checkbox' name='team' %s/><br/>
+Decklist URL: <input type='text' name='decklisturl' value='%s'/><br/>
 <input type='submit' />
 </form>
-""" % (form['password'].value if 'password' in form else '', name, url, rounds, password, 'checked="true"' if pairings else '', 'checked="true"' if team else '')
+""" % (form['password'].value if 'password' in form else '', name, url, rounds, password, 'checked="true"' if pairings else '', 'checked="true"' if team else '', decklisturl or '')
 	output.printLink(form, 'root', 'Return to menu')
 	print """
 		</body>

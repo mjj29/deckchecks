@@ -12,21 +12,56 @@ def getCFBJSONData(url):
 	return root
 
 class CFBTournament(object):
+	cachedPairingsData = {}
+	cachedDecklistData = {}
+
+	@classmethod
+	def getCachedPairingsData(cls, id, url):
+		if not id in cls.cachedPairingsData:
+			cls.cachedPairingsData[id] = getCFBJSONData(url)
+		return cls.cachedPairingsData[id]
+
+	@classmethod
+	def getCachedDecklistData(cls, id, url):
+		if not id in cls.cachedDecklistData:
+			cls.cachedDecklistData[id] = getCFBJSONData(url)['data']
+		return cls.cachedDecklistData[id]
+	
 	def __init__(self, json):
 		self.id=json['id']
 		self.name=json['name']
 		self.pairingsurl=json.get('pairings_url', None)
-		self.data=None
+		self.decklistsurl=json.get('decklist_list_url', None)
 	def getPairingsURL(self): return self.pairingsurl
+	def getDecklistsURL(self): return self.decklistsurl
 	def getName(self): return self.name
 	def getId(self): return self.id
 	def getRound(self):
-		if not self.data: self.data = getCFBJSONData(self.pairingsurl)
-		return int(self.data['current_round'])
+		data = CFBTournament.getCachedPairingsData(self.id, self.pairingsurl)
+		return int(data['current_round'])
+	def getListURLForPlayer(self, name):
+		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
+		for i in data:
+			if i['name'] == name:
+				return APIBASE+'/deck/raw/%s'%i['id']
+		return None
+	def getPlayersWithDecklists(self):
+		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
+		return set([x['name'] for x in data])
+
 	def getPairings(self):
-		if not self.data: self.data = getCFBJSONData(self.pairingsurl)
+		data = CFBTournament.getCachedPairingsData(self.id, self.pairingsurl)
+		deckdata = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
 		roundnum=self.getRound()
-		return [(roundnum, i['table'], (i['player']['name'], '', i['player']['points'])) for i in self.data['data']]
+		return [
+			(roundnum, 
+			 i['table'], 
+			 (i['player']['name'], '', i['player']['points']),
+			  ('/deck/raw/%s'%i['player']['id']) if next(
+				 [item for item in deckdata if item["id"] == i['player']['id']],
+				 None
+				) else False
+			 ) for i in data['data']]
 
 
 class CFBShow(object):

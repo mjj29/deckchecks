@@ -24,6 +24,7 @@ if check_login(output, form['event'].value, form['password'].value if 'password'
 	output.printLink(form, 'get_player', 'Lookup by player')
 	output.printLink(form, 'top_tables', 'Check top tables')
 	output.printLink(form, 'recommend', 'Recommend checks')
+	output.printLink(form, 'lists', 'Show offline lists')
 	output.printLink(form, 'allchecks', 'See all checks')
 	output.printLink(form, 'pairings', 'Pairings')
 	output.printLink(form, 'import', 'Import data')
