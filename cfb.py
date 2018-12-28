@@ -69,7 +69,7 @@ class CFBShow(object):
 	def getID(self): return self.id
 	def getTournaments(self):
 		root = getCFBJSONData(self.tournamenturl)
-		return [CFBTournament(x) for x in root['data']]
+		return [CFBTournament(x) for x in root['data'] if x['format'] != 'Package']
 
 def getCFBShows(url='/api/json/'):
 	root = getCFBJSONData(url)
