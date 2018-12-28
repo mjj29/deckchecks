@@ -68,10 +68,10 @@ def importAllDataURL(event, pairingsurl, clear):
 			db.deleteRow('players', {'tournamentid':id})
 
 		if 'json' in pairingsurl:
-			t = CFBTournament({'id':id,'name':event,'pairings_url':pairingsurl,'decklist_list_url':db.getDecklistURL(id)})
+			t = CFBTournament({'id':id,'name':event,'pairings_url':pairingsurl,'decklist_list_url':db.getDecklistUrl(id)})
 			rnd = t.getRound()
 			count = 0
-			for (_, table, player, decklist) in t.getPairings():
+			for (_, table, player) in t.getPairings():
 				if rnd == 1:
 					insertSeating(db, id, table, player)
 				insertPairing(db, id, rnd, table, player)

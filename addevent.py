@@ -14,6 +14,7 @@ def addevent(event, url, decklisturl=None):
 			db.insert('round', [0, id])
 		except Exception as e:
 			output.printMessage("Failed to add event: %s" % e)
+		output.printMessage("Added event %s" % event)
 
 def docgi():
 			
@@ -22,20 +23,23 @@ def docgi():
 	<html>
 		<head><title>Deck Checks - add event</title><link rel='stylesheet' href='style.css' /></head>
 		<body>
-			<h1>Add event</h1>
-			<h2>Add event from CFB pairings</h2>
-			<ul>
+	      <h1>Add event</h1>
 """
 	with DeckDB() as db:
 		events = {}
 		for ev in db.get_events():
 			events[ev[1]] = ev[2]
+	form = cgi.FieldStorage()
+	if 'name' in form:
+		addevent(form['name'].value, form['url'].value if 'url' in form else '', form['decklisturl'].value if 'decklisturl' in form else '')
+
+	print """
+			<h2>Add event from CFB pairings</h2>
+			<ul>
+"""
 	try:
 		html = urllib2.urlopen('http://pairings.channelfireball.com/pairings/')
 		soup = bs4.BeautifulSoup(html)
-		form = cgi.FieldStorage()
-		if 'name' in form:
-			addevent(form['name'].value, form['url'].value if 'url' in form else '', form['decklisturl'].value if 'decklisturl' in form else '')
 
 		for div in soup.find_all('div', class_='row'):
 			for link in div.find_all('a'):
@@ -78,7 +82,7 @@ def docgi():
 				if tournament.getName()+' at '+show.getName() in events:
 					print "<li>%s already imported</li>" % (tournament.getName())
 				else:
-					print "<li><a href='addevent?name=%s&amp;url=%s&amp;decklisturl=%s'>Import %s</a></li>" % (tournament.getName()+'%20at%20'+show.getName(), tournament.getPairingsURL(), tournament.getDecklistsURL(), tournament.getName())
+					print "<li><a href='addevent?name=%s&amp;url=%s&amp;decklisturl=%s'>Import %s</a></li>" % (tournament.getName()+'%20at%20'+show.getName(), tournament.getPairingsURL() or '', tournament.getDecklistsURL() or '', tournament.getName())
 			print "</ul></li>"
 	except Exception as e:
 		print "<li><b>An error occurred while loading data from the CFB API: %s</b></li>"%e

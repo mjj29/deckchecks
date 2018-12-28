@@ -130,9 +130,8 @@ class HTMLOutput(Output):
 		print self.makeLink(form, 'get_player?name=%s'%name, name)
 		print "<td>%s</td>%s<td><b>"%(score, tablelinks)
 		print self.makeLink(form, 'get_table?table=%s'%build, build)
-		pairingsurl = db.getEventUrl(eventid)
-		if 'json' in pairingsurl:
-			t = CFBTournament({'id':eventid, 'name':'Event', 'pairingsurl':pairingsurl, 'decklist_list_url':db.getDecklistUrl(eventid)})
+		if db.getDecklistUrl(eventid):
+			t = CFBTournament({'id':eventid, 'name':'Event', 'pairingsurl':db.getEventUrl(eventid), 'decklist_list_url':db.getDecklistUrl(eventid)})
 			listurl = t.getListURLForPlayer(name)
 			if listurl:
 				print " [<a href='%s'>online</a>]" % listurl

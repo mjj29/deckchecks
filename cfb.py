@@ -18,13 +18,13 @@ class CFBTournament(object):
 	@classmethod
 	def getCachedPairingsData(cls, id, url):
 		if not id in cls.cachedPairingsData:
-			cls.cachedPairingsData[id] = getCFBJSONData(url)
+			cls.cachedPairingsData[id] = getCFBJSONData(url) if url else None
 		return cls.cachedPairingsData[id]
 
 	@classmethod
 	def getCachedDecklistData(cls, id, url):
 		if not id in cls.cachedDecklistData:
-			cls.cachedDecklistData[id] = getCFBJSONData(url)['data']
+			cls.cachedDecklistData[id] = getCFBJSONData(url)['data'] if url else None
 		return cls.cachedDecklistData[id]
 	
 	def __init__(self, json):
@@ -56,11 +56,7 @@ class CFBTournament(object):
 		return [
 			(roundnum, 
 			 i['table'], 
-			 (i['player']['name'], '', i['player']['points']),
-			  ('/deck/raw/%s'%i['player']['id']) if next(
-				 [item for item in deckdata if item["id"] == i['player']['id']],
-				 None
-				) else False
+			 (i['player']['name'], '', i['player']['points'])
 			 ) for i in data['data']]
 
 
