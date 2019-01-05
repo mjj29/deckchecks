@@ -1,6 +1,6 @@
 import json, urllib2
 
-APIBASE='https://test.playerlink.online'
+APIBASE='https://my.cfbevents.com'
 
 def getCFBJSONData(url):
 	html = urllib2.urlopen(APIBASE+url)
@@ -43,7 +43,7 @@ class CFBTournament(object):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
 		for i in data:
 			if i['name'] == name:
-				return APIBASE+'/deck/raw/%s'%i['id']
+				return APIBASE+'/tools/deck/%s'%i['id']
 		return None
 	def getPlayersWithDecklists(self):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)

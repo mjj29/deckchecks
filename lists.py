@@ -18,9 +18,9 @@ def lists(tournament):
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
 			
-			pairingsurl = db.getEventUrl(id)
-			if 'json' in pairingsurl:
-				t = CFBTournament({'id':id, 'name':'Event', 'pairingsurl':pairingsurl, 'decklist_list_url':db.getDecklistUrl(id)})
+			decklisturl=db.getDecklistUrl(id)
+			if 'json' in decklisturl:
+				t = CFBTournament({'id':id, 'name':'Event', 'pairingsurl':db.getEventUrl(id), 'decklist_list_url':decklisturl})
 				online = t.getPlayersWithDecklists()
 			else:
 				online = set()
