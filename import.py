@@ -480,8 +480,8 @@ def docgi():
 	Clear data: <input type='checkbox' name='clear' value='true' />[if importing seating resets all tournament data including checks]<br/>
 	Import round: <input type='text' name='round' value='%s' /><br/>
 	Import from file: <input type='file' name='datafile' /><br/>
-	<textarea name='data' cols='80' rows='20'></textarea><br/>
 	<input type='submit' />
+	<textarea name='data' cols='80' rows='20'></textarea><br/>
 </form>
 </div>
 <h2>Instructions</h2>
