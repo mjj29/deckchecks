@@ -72,7 +72,7 @@ def importAllDataURL(event, pairingsurl, clear):
 			rnd = t.getRound()
 			count = 0
 			for (_, table, player) in t.getPairings():
-				if rnd == 1:
+				if rnd == 1 and not db.hasSeating(id):
 					insertSeating(db, id, table, player)
 				insertPairing(db, id, rnd, table, player)
 				count = count + 1
@@ -99,7 +99,7 @@ def importAllDataURL(event, pairingsurl, clear):
 					try:
 						table = int(table.get_text())
 						player = (name.get_text(), '', int(points.get_text()))
-						if rnd == 1:
+						if rnd == 1 and not db.hasSeating(id):
 							insertSeating(db, id, table, player)
 						insertPairing(db, id, rnd, table, player)
 					except Exception as e:
@@ -135,7 +135,7 @@ def importAllDataURL(event, pairingsurl, clear):
 							try:
 								table=int(tds[0].string.strip())
 								player = (tds[1].string.strip(), '', int(tds[2].string.strip()))
-								if rnd == 1:
+								if rnd == 1 and not db.hasSeating(id):
 									insertSeating(db, id, table, player)
 								insertPairing(db, id, rnd, table, player)
 								counter = counter + 1
@@ -466,7 +466,7 @@ def docgi():
 <form method='post' enctype="multipart/form-data">
 	<input type='hidden' name='password' value='%s'/>
 	Clear data: <input type='checkbox' name='clear' value='true' /> [resets all tournament data including checks]<br/>
-	Import all data from CFB Event URL: <input type='text' name='pairingsurl' value='%s'/> <input type='submit'/>
+	Import all data from Pairings URL: <input type='text' name='pairingsurl' value='%s'/> <input type='submit'/>
 </form>
 </div>
 <div>

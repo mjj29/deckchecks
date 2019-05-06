@@ -215,7 +215,12 @@ ORDER BY lname
 			return [(r[1], r[2], self.get_prev_tables(tournamentid, r[0]), r[3]) for r in rows]
 
 
-
+	def hasSeating(self, tournamentid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("SELECT * FROM players INNER JOIN seatings on players.playerid=seatings.playerid WHERE players.tournamentid=%s", (tournamentid))
+			rows = cur.fetchall()
+			return True if len(rows) > 0 else False
+	
 	def get_table(self, tournamentid, tablenum, roundnum=None):
 		roundnum = roundnum or self.get_round(tournamentid)
 		with DeckCursor(self.db.cursor()) as cur:
