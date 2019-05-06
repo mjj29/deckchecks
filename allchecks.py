@@ -16,10 +16,15 @@ def allchecks(tournament, form):
 			headers = output.getHeaders(maxrounds)
 
 			checks = db.get_all_checks(id)
+			total_names=set()
+			for rn in checks.keys():
+				total_names = total_names | set([name for (name, seat) in checks[rn]])
+			output.printMessage("Total players checked: %s" % len(total_names))
 			for rn in reversed(sorted(checks.keys())):
 				output.heading("Round %s"%rn)
+				names = set([name for (name, seat) in checks[rn]])
+				output.printMessage("Total players checked this round: %s" % len(names))
 				with output.table(*headers) as table:
-					names = set([name for (name, seat) in checks[rn]])
 					for name in names:
 						players = db.get_players(id, name)
 						for p in players:
