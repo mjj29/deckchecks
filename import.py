@@ -91,25 +91,29 @@ def importAllDataURL(event, pairingsurl, clear):
 
 				table = soup.find('table')
 				if not table: break
-				output.printMessage("Importing data for round %s" % rnd)
-				sys.stdout.flush()
-				counter = 0
-				for row in table.find_all('tr'):
-					(table, name, points, opponent) = row.find_all('td')[0:4]
-					try:
-						table = int(table.get_text())
-						player = (name.get_text(), '', int(points.get_text()))
-						if rnd == 1 and not db.hasSeating(id):
-							insertSeating(db, id, table, player)
-						insertPairing(db, id, rnd, table, player)
-					except Exception as e:
+				try:
+					output.printMessage("Importing data for round %s" % rnd)
+					sys.stdout.flush()
+					counter = 0
+					for row in table.find_all('tr'):
+						(table, name, points, opponent) = row.find_all('td')[0:4]
 						try:
-							output.printMessage("Failed to import row: %s: %s" % (row.get_text(), e))
-						except:
-							output.printMessage('Failed to import row: %s' % e)
-					counter = counter + 1
-				output.printMessage("Imported %d pairings" % counter)
-				sys.stdout.flush()
+							table = int(table.get_text())
+							player = (name.get_text(), '', int(points.get_text()))
+							if rnd == 1 and not db.hasSeating(id):
+								insertSeating(db, id, table, player)
+							insertPairing(db, id, rnd, table, player)
+						except Exception as e:
+							try:
+								output.printMessage("Failed to import row: %s: %s" % (row.get_text(), e))
+							except:
+								output.printMessage('Failed to import row: %s' % e)
+						counter = counter + 1
+					output.printMessage("Imported %d pairings" % counter)
+					sys.stdout.flush()
+				except:
+					output.printMessage("Failed to import round, assuming that was all of them")
+					break
 			rnd = rnd - 1
 			output.printMessage("Imported %d rounds" % rnd)
 			try:
