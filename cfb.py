@@ -43,7 +43,7 @@ class CFBTournament(object):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
 		for i in data:
 			if i['name'] == name:
-				return APIBASE+'/tools/deck/%s'%i['id']
+				return APIBASE+'/tools/deck/view/%s'%i['id']
 		return None
 	def getPlayersWithDecklists(self):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
