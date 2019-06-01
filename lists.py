@@ -21,25 +21,37 @@ def lists(tournament):
 			decklisturl=db.getDecklistUrl(id)
 			if 'json' in decklisturl:
 				t = CFBTournament({'id':id, 'name':'Event', 'pairingsurl':db.getEventUrl(id), 'decklist_list_url':decklisturl})
-				online = t.getPlayersWithDecklists()
+				online = set([name.lower().strip() for name in t.getPlayersWithDecklists()])
 			else:
 				online = set()
 			records = db.getAllPlayers(id)
 			tables = {}
 			for (name, buildtable) in records:
-				tables[name] = buildtable
-			players = set([name for (name, buildtable) in records])
+				tables[name.lower().strip()] = (name, buildtable)
+			players = set([name.lower().strip() for (name, buildtable) in records])
 			paperLists = players-online
+			extraLists = online-players
 
 			paperTables = {}
 			for player in paperLists:
-				paperTables[player]=tables[player]
+				(name, buildtable) = tables[player]
+				paperTables[name] = buildtable
 				
+			output.printMessage("Players we can't find the list online for by name comparison:")
 
 			with output.table("Name", "Build table") as table:
 				for player, tbl in sorted(paperTables.iteritems(), key=lambda (k,v): (v,k)):
 					try:
 						table.printRow(player, tbl)
+					except Exception as e:
+						print "<p>%s</p>" % str(e)
+
+			output.printMessage("Lists we seem to have with no player in the event (yet, could be byes):")
+
+			with output.table("Name") as table:
+				for player in sorted(extraLists):
+					try:
+						table.printRow(player)
 					except Exception as e:
 						print "<p>%s</p>" % str(e)
 

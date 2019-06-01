@@ -42,12 +42,12 @@ class CFBTournament(object):
 	def getListURLForPlayer(self, name):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
 		for i in data:
-			if i['name'] == name:
+			if i['name'].strip().lower() == name.strip().lower():
 				return APIBASE+'/tools/deck/view/%s'%i['id']
 		return None
 	def getPlayersWithDecklists(self):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
-		return set([x['name'] for x in data])
+		return set([x['name'].strip() for x in data])
 
 	def getPairings(self):
 		data = CFBTournament.getCachedPairingsData(self.id, self.pairingsurl)
