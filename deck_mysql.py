@@ -211,10 +211,12 @@ ORDER BY lname
 		roundnum = roundnum or self.get_round(tournamentid)
 		if rand:
 			threshold=0
+			additionalFilters=""
 		else:
 			playersWithEachByes = self.getPlayersForEachByeNumber(tournamentid)
 			totalRounds = self.getEventRounds(tournamentid)
 			threshold=calculateTop8Threshold(playersWithEachByes, totalRounds, roundnum)
+			additionalFilters="AND deckchecks.playerid is NULL"
 
 		with DeckCursor(self.db.cursor()) as cur:
 			cur.execute("""
@@ -223,11 +225,12 @@ FROM players INNER JOIN seatings
 	ON players.playerid=seatings.playerid 
 INNER JOIN pairings 
 	ON players.playerid=pairings.playerid 
+LEFT OUTER JOIN deckchecks 
+	ON deckchecks.playerid=players.playerid
 WHERE players.tournamentid=%s
 	AND pairings.round=%s 
 	AND pairings.score>=%s
-ORDER BY tablenum
-""", (tournamentid, roundnum, threshold))
+"""+additionalFilters+" ORDER BY tablenum", (tournamentid, roundnum, threshold))
 			rows = cur.fetchall()
 			tables = {}
 			for r in rows:
