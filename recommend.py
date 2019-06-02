@@ -10,20 +10,23 @@ def recommend_checks(tournament, form):
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
-			tables = db.get_recommendations(id)
+			targetTables = db.get_recommendations(id, n=6, rand=False)
+			randomTables = db.get_recommendations(id, n=4, rand=True)
 			maxrounds = db.get_round(id)
 			headers = output.getHeaders(maxrounds)
-			for (tablenumber, player1, player2) in tables:
-				output.heading("Table %s"%tablenumber)
-				if db.isEventTeam(tournament):
-					output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'0'}, "Checked Seat A this round")
-					output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'1'}, "Checked Seat B this round")
-					output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'2'}, "Checked Seat C this round")
-				else:
-					output.createButton(form, "deckcheck", {"table":tablenumber}, "Checked this round")
-				with output.table(*headers):
-					output.printPlayer(player1, db, id, form)
-					output.printPlayer(player2, db, id, form)
+			for (tables, name) in [(targetTables, "Tables live for Top 8"), (randomTables, "Random Tables")]:
+				output.heading(name)
+				for (tablenumber, player1, player2) in tables:
+					output.heading("Table %s"%tablenumber)
+					if db.isEventTeam(tournament):
+						output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'0'}, "Checked Seat A this round")
+						output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'1'}, "Checked Seat B this round")
+						output.createButton(form, "deckcheck", {"table":tablenumber, 'seat':'2'}, "Checked Seat C this round")
+					else:
+						output.createButton(form, "deckcheck", {"table":tablenumber}, "Checked this round")
+					with output.table(*headers):
+						output.printPlayer(player1, db, id, form)
+						output.printPlayer(player2, db, id, form)
 			
 
 	except Exception as e:
@@ -44,11 +47,6 @@ def docgi():
 		output.pageHeader(db, form['event'].value, roundnum, form)
 	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'recommend'):
 		return
-	print """
-		<p>
-			Note: recommendations are currently completely random
-		</p>
-	"""
 	recommend_checks(form["event"].value, form)
 	output.printLink(form, 'root', 'Return to menu')
 	print """

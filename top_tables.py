@@ -3,6 +3,7 @@ import csv, sys, cgitb, os, cgi
 from deck_mysql import DeckDB
 from printers import TextOutput, HTMLOutput
 from login import check_login
+from swisscalc import calculateTop8Threshold
 
 output = None
 
@@ -11,6 +12,14 @@ def top_tables(tournament, form):
 	try:
 		with DeckDB() as db:
 			id = db.getEventId(tournament)
+
+			currentRound = db.get_round(id)
+			totalRounds = db.getEventRounds(id)
+			playersWithEachByes = db.getPlayersForEachByeNumber(id)
+			
+			currentTop8Threshold = calculateTop8Threshold(playersWithEachByes, totalRounds, currentRound)
+			output.printMessage("Players with at least %s points can still make top 8" % currentTop8Threshold)
+
 			tables = db.get_top_tables(id)
 			with output.table("Table", "Score", "Name", "Previous Checks", "Score", "Name", "Previous Checks") as table:
 				for row in tables:
@@ -22,6 +31,10 @@ def top_tables(tournament, form):
 						(name2, score2, _, _) = player2
 						prevChecks1 = db.getPreviousChecks(id, name1)
 						prevChecks2 = db.getPreviousChecks(id, name2)
+						if (score1 < currentTop8Threshold and score2 < currentTop8Threshold):
+							table.setNextRowType('dead')
+						else:
+							table.setNextRowType('live')
 						table.printRow(
 							output.makeLink(form, 'get_table?table=%s'%tablenum, tablenum),
 							score1,
@@ -30,8 +43,8 @@ def top_tables(tournament, form):
 							score2,
 							output.makeLink(form, 'get_player?name=%s'%name2, name2),
 							", ".join([str(x) for x in prevChecks2]))
-					except:
-						pass
+					except Exception as e:
+						print str(e)
 
 	except Exception as e:
 		output.printMessage("Failed to print top tables: %s" % (e))

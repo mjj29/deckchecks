@@ -8,6 +8,7 @@ class NullTable:
 		pass
 	def printRow(self, *args):
 		print ", ".join([str(x) for x in args])
+	def setNextRowType(self, _): pass
 
 class Output:
 	def getHeaders(self, maxrounds):
@@ -65,6 +66,7 @@ class TSVTable:
 		pass
 	def printRow(self, *args):
 		print "\t".join([remove_tags(str(x)) for x in args])
+	def setNextRowType(self, _): pass
 
 class TSVOutput(Output):
 	def table(self, *args):
@@ -94,6 +96,7 @@ class TSVOutput(Output):
 class HTMLTable:
 	def __init__(self, *args):
 		self.titles = args
+		self.nextRowType = ''
 	def __enter__(self):
 		print "<table>"
 		print "<tr>"
@@ -104,10 +107,13 @@ class HTMLTable:
 	def __exit__(self, *args, **kwargs):
 		print "</table>"
 	def printRow(self, *args):
-		print "<tr>"
+		print "<tr class='%s'>"%self.nextRowType
 		for a in args:
 			print "<td>%s</td>" % a
 		print "</tr>"
+		self.nextRowType = ''
+	def setNextRowType(self, rowType):
+		self.nextRowType=rowType
 
 
 class HTMLOutput(Output):

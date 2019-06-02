@@ -33,6 +33,14 @@ span.OK {
 	color: green;
 }
 
+.dead {
+	background-color: ffa3a3;
+}
+.live {
+	background-color: 9dffc2;
+}
+
+
 a:link {
 	color: 88c;
 	text-decoration: none;

@@ -1,5 +1,6 @@
 import MySQLdb, sys, random
 from mysql_passwords import database, user, password
+from swisscalc import calculateTop8Threshold
 
 class DeckCursor:
 	def __init__(self, cur):
@@ -136,6 +137,30 @@ class DeckDB:
 			rows = cur.fetchall()
 			return rows[0][0]
 
+	def getPlayersForEachByeNumber(self, eventid):
+		with DeckCursor(self.db.cursor()) as cur:
+			cur.execute("""
+SELECT round-1 AS byes, count(round) AS players FROM (
+	SELECT min(round) AS round FROM
+		pairings INNER JOIN 
+		players ON
+			pairings.playerid=players.playerid
+	WHERE players.tournamentid=%s GROUP BY name)
+	AS minRounds
+GROUP BY round
+ORDER BY byes
+""", eventid)
+			rows = cur.fetchall()
+			result = []
+			b = 0
+			for (byes, number) in rows:
+				while b < byes:
+					b = b + 1
+					result.append(0)
+				result.append(number)
+				b = b + 1
+		return result
+
 
 	def get_events(self):
 		with DeckCursor(self.db.cursor()) as cur:
@@ -182,10 +207,27 @@ ORDER BY lname
 			cur.execute("SELECT MAX(score), tablenum FROM pairings WHERE tournamentid=%s AND round=%s GROUP BY tablenum ORDER BY MAX(score) DESC, tablenum LIMIT 100", (tournamentid, roundnum))
 			return cur.fetchall()
 
-	def get_recommendations(self, tournamentid, roundnum=None):
+	def get_recommendations(self, tournamentid, roundnum=None, n=6, rand=True):
 		roundnum = roundnum or self.get_round(tournamentid)
+		if rand:
+			threshold=0
+		else:
+			playersWithEachByes = self.getPlayersForEachByeNumber(tournamentid)
+			totalRounds = self.getEventRounds(tournamentid)
+			threshold=calculateTop8Threshold(playersWithEachByes, totalRounds, roundnum)
+
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT players.playerid, name, score, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE players.tournamentid=%s AND pairings.round=%s ORDER BY tablenum", (tournamentid, roundnum))
+			cur.execute("""
+SELECT players.playerid, name, score, buildtable 
+FROM players INNER JOIN seatings 
+	ON players.playerid=seatings.playerid 
+INNER JOIN pairings 
+	ON players.playerid=pairings.playerid 
+WHERE players.tournamentid=%s
+	AND pairings.round=%s 
+	AND pairings.score>=%s
+ORDER BY tablenum
+""", (tournamentid, roundnum, threshold))
 			rows = cur.fetchall()
 			tables = {}
 			for r in rows:
@@ -198,7 +240,7 @@ ORDER BY lname
 					pass
 
 			rv = []
-			for i in range(0, 6):
+			for i in range(0, n):
 				k = random.choice(tables.keys())
 				try:
 					rv.append((k, tables[k][0], tables[k][1]))
