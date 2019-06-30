@@ -4,6 +4,7 @@ SWISSCUT='https://sixprizes.com/top-cut-calculator/'
 
 def calculateTop8Threshold(playersPerBye, totalRounds, currentRound):
 
+	currentRound = currentRound - 1
 	effectivePlayers = 0
 	for b in range(0, len(playersPerBye)):
 		effectivePlayers = effectivePlayers + playersPerBye[b]*pow(2, b)
