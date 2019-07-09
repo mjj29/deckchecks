@@ -18,7 +18,7 @@ def calculateTop8Threshold(playersPerBye, totalRounds, currentRound):
 	wins=int(worst_record.split('-')[0])
 	score=3*wins
 	currentThreshold=score-maxOutstandingPoints
-	return currentThreshold
+	return (currentThreshold, currentThreshold+3, currentRound*3)
 
 
 #calculateTop8Threshold([1000, 300, 200, 100], 15, 10)

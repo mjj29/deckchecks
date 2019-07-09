@@ -39,6 +39,15 @@ span.OK {
 .live {
 	background-color: 9dffc2;
 }
+.undefeated {
+	background-color: 429fff;
+}
+.marginal {
+	background-color: f5f869;
+}
+.unlikely {
+	background-color: f88e2a;
+}
 
 
 a:link {

@@ -17,7 +17,7 @@ def top_tables(tournament, form):
 			totalRounds = db.getEventRounds(id)
 			playersWithEachByes = db.getPlayersForEachByeNumber(id)
 			
-			currentTop8Threshold = calculateTop8Threshold(playersWithEachByes, totalRounds, currentRound)
+			(currentMarginalThreshold, currentTop8Threshold, undefeatedThreshold) = calculateTop8Threshold(playersWithEachByes, totalRounds, currentRound)
 			output.printMessage("Players with at least %s points can still make top 8" % currentTop8Threshold)
 
 			tables = db.get_top_tables(id)
@@ -31,10 +31,16 @@ def top_tables(tournament, form):
 						(name2, score2, _, _) = player2
 						prevChecks1 = db.getPreviousChecks(id, name1)
 						prevChecks2 = db.getPreviousChecks(id, name2)
-						if (score1 < currentTop8Threshold and score2 < currentTop8Threshold):
+						if (score1 == undefeatedThreshold or score2 == undefeatedThreshold):
+							table.setNextRowType('undefeated')
+						elif (score1 < currentMarginalThreshold and score2 < currentMarginalThreshold):
 							table.setNextRowType('dead')
-						else:
+						elif (score1 >= currentTop8Threshold or score2 >= currentTop8Threshold):
 							table.setNextRowType('live')
+						elif (score1 > currentMarginalThreshold or score2 > currentMarginalThreshold):
+							table.setNextRowType('marginal')
+						else:
+							table.setNextRowType('unlikely')
 						table.printRow(
 							output.makeLink(form, 'get_table?table=%s'%tablenum, tablenum),
 							score1,
@@ -64,6 +70,15 @@ def docgi():
 		output.pageHeader(db, form['event'].value, roundnum, form)
 	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'top_tables'):
 		return
+	print """ 
+			<p>Key: 
+				<span class='undefeated'>undefeated</span> 
+				<span class='live'>definitely live for top 8</span> 
+				<span class='marginal'>possibility of top 8</span> 
+				<span class='unlikely'>theoretically possible</span> 
+				<span class='dead'>cannot top 8</span> 
+			</p>
+""" 
 	top_tables(form["event"].value, form)
 	output.printLink(form, 'export?type=top', 'Download as TSV')
 	output.printLink(form, 'root', 'Return to menu')
