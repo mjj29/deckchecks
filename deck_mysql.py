@@ -210,12 +210,12 @@ ORDER BY lname
 	def get_recommendations(self, tournamentid, roundnum=None, n=6, rand=True):
 		roundnum = roundnum or self.get_round(tournamentid)
 		if rand:
-			threshold=0
+			marginalthreshold=0
 			additionalFilters=""
 		else:
 			playersWithEachByes = self.getPlayersForEachByeNumber(tournamentid)
 			totalRounds = self.getEventRounds(tournamentid)
-			threshold=calculateTop8Threshold(playersWithEachByes, totalRounds, roundnum)
+			(marginalthreshold, top8threshold, undefeatedthreshold) =calculateTop8Threshold(playersWithEachByes, totalRounds, roundnum)
 			additionalFilters="AND deckchecks.playerid is NULL"
 
 		with DeckCursor(self.db.cursor()) as cur:
@@ -230,7 +230,7 @@ LEFT OUTER JOIN deckchecks
 WHERE players.tournamentid=%s
 	AND pairings.round=%s 
 	AND pairings.score>=%s
-"""+additionalFilters+" ORDER BY tablenum", (tournamentid, roundnum, threshold))
+"""+additionalFilters+" ORDER BY tablenum", (tournamentid, roundnum, marginalthreshold))
 			rows = cur.fetchall()
 			tables = {}
 			for r in rows:
