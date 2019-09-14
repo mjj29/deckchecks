@@ -41,9 +41,13 @@ class CFBTournament(object):
 		return int(data['current_round'])
 	def getListURLForPlayer(self, name):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
+		candidates=[]
 		for i in data:
 			if i['name'].strip().lower() == name.strip().lower():
-				return APIBASE+'/tools/deck/print/%s'%i['id']
+				candidates.append( (i['created_at'], APIBASE+'/tools/deck/print/%s'%i['id']) )
+		candidates.sort()
+		if len(candidates) > 0:
+			return candidates[-1][1]
 		return None
 	def getPlayersWithDecklists(self):
 		data = CFBTournament.getCachedDecklistData(self.id, self.decklistsurl)
