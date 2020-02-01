@@ -154,6 +154,44 @@ def importAllDataURL(event, pairingsurl, clear):
 				db.insert('round', [rnd, id])
 			except Exception as e:
 				output.printMessage("Failed to update current round number: %s" % e)
+		elif 'cfbevents' in pairingsurl:
+			
+			html = urllib2.urlopen(pairingsurl).read()
+			soup =  bs4.BeautifulSoup(html)
+
+			rndhtml = soup.find('h1', class_='display-4')
+			if not rndhtml: raise Exception("Could not find round number")
+			rnd=int(re.sub('^[^0-9]*([0-9]*)[^0-9].*$', r'\1', rndhtml.get_text().replace('\n', '')))
+			output.printMessage("Importing round %s"%rnd)
+			
+			table = soup.find('table')
+			if not table: raise Exception("Could not find pairings table")
+			try:
+				counter = 0
+				for row in table.find_all('tr'):
+					try:
+						row = row.find_all('td')+["0"]
+						(table, name, points) = row[0:3]
+						table = int(table.get_text())
+						player = (name.get_text(), '', int(points.get_text()))
+						if rnd == 1 and not db.hasSeating(id):
+							insertSeating(db, id, table, player)
+						insertPairing(db, id, rnd, table, player)
+					except Exception as e:
+						try:
+							output.printMessage("Failed to import row: %s: %s" % (row.get_text(), e))
+						except:
+							output.printMessage('Failed to import row: %s' % e)
+					counter = counter + 1
+				output.printMessage("Imported %d pairings" % counter)
+				sys.stdout.flush()
+			except Exception as e:
+				output.printMessage('Failed to import pairings: %s' %e)
+			try:
+				db.deleteRow('round', {'tournamentid':id})
+				db.insert('round', [rnd, id])
+			except Exception as e:
+				output.printMessage("Failed to update current round number: %s" % e)
 		else:
 			raise Exception("Unknown pairings site: %s" % pairingsurl)
 

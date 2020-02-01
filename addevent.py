@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
-from cfb import getCFBShows
+from cfb import getCFBShows, APIBASE
 import csv, sys, os, cgi, cgitb, urllib2, bs4, re
 
 output = None
@@ -82,7 +82,7 @@ def docgi():
 				if tournament.getName()+' at '+show.getName() in events:
 					print "<li>%s already imported</li>" % (tournament.getName())
 				else:
-					print "<li><a href='addevent?name=%s&amp;url=%s&amp;decklisturl=%s'>Import %s</a>&nbsp;<span class='%s'>pairings</span>&nbsp;<span class='%s'>decklists</span></li>" % (tournament.getName()+'%20at%20'+show.getName(), tournament.getPairingsURL() or '', tournament.getDecklistsURL() or '', tournament.getName(), 'OK' if tournament.getPairingsURL() else 'FAIL', 'OK' if tournament.getDecklistsURL() else 'FAIL')
+					print "<li><a href='addevent?name=%s&amp;url=%s&amp;decklisturl=%s'>Import %s</a>&nbsp;<span class='%s'>pairings</span>&nbsp;<span class='%s'>decklists</span></li>" % (urllib2.quote(tournament.getName())+'%20at%20'+show.getName(), (APIBASE+tournament.getPairingsURL().replace('/api/json', '')) if tournament.getPairingsURL() else '', tournament.getDecklistsURL() or '', tournament.getName(), 'OK' if tournament.getPairingsURL() else 'FAIL', 'OK' if tournament.getDecklistsURL() else 'FAIL')
 			print "</ul></li>"
 	except Exception as e:
 		print "<li><b>An error occurred while loading data from the CFB API: %s</b></li>"%e
