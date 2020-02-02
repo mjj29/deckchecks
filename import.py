@@ -11,6 +11,7 @@ output = None
 def insertSeating(db, eventid, table, player):
 
 	(name, country, score) = player
+	name = re.sub(r'[^\x00-\x7f]',r'', name) 
 	try:
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	except:
@@ -27,6 +28,7 @@ def insertSeating(db, eventid, table, player):
 
 def insertPairing(db, eventid, roundnum, table, player):
 	(name, country, score) = player
+	name = re.sub(r'[^\x00-\x7f]',r'', name) 
 	try:
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	except Exception as e:
@@ -173,7 +175,10 @@ def importAllDataURL(event, pairingsurl, clear):
 						row = row.find_all('td')+["0"]
 						(table, name, points) = row[0:3]
 						table = int(table.get_text())
-						player = (name.get_text(), '', int(points.get_text()))
+						try:
+							player = (name.get_text(), '', int(points.get_text()))
+						except:
+							player = (name.get_text(), '', 0)
 						if rnd == 1 and not db.hasSeating(id):
 							insertSeating(db, id, table, player)
 						insertPairing(db, id, rnd, table, player)
