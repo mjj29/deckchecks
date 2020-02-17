@@ -22,6 +22,9 @@ with DeckDB() as db:
 print """
 	</ul>
 	<h2><a href='addevent'>Add new event</a></h2>
+	<hr />
+	<h3 style='text-align: center;text-width: 100%'><a href='https://docs.google.com/document/d/1iKJm6PYV5-64KotTSe_IO7LtKho9Nv1F2zORUcrgUZo/edit?usp=sharing'>Documentation</a></h3>
+	<p style='text-align: center;text-width: 100%'>Copyright 2020 Matthew Johnson</p>
 </body>
 </html>
 """
