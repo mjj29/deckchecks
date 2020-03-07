@@ -38,7 +38,10 @@ def mark_checked(tournament, table=None, player=None, roundnum=None, seat=0, rem
 					db.deleteRow('deckchecks', {'playerid':playerid, 'teamplayer':seat, 'tournamentid':id, 'round':roundnum})
 				else:
 					db.insert('deckchecks', [playerid, seat, id, round])
-			output.printMessage("Marked player %s as checked in round %s" % (player, round))
+			if remove:
+				output.printMessage("Marked player %s as not checked in round %s" % (player, round))
+			else:
+				output.printMessage("Marked player %s as checked in round %s" % (player, round))
 		except Exception as e:
 			output.printMessage("Failed to lookup player %s: %s" % (player, e))
 
