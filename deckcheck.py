@@ -6,7 +6,7 @@ from login import check_login
 
 output = None
 
-def mark_checked(tournament, table=None, player=None, roundnum=None, seat=0):
+def mark_checked(tournament, table=None, player=None, roundnum=None, seat=0, remove=False):
 
 	if table:
 		try:
@@ -15,10 +15,17 @@ def mark_checked(tournament, table=None, player=None, roundnum=None, seat=0):
 				if None == roundnum:
 					roundnum = db.get_round(id)
 				(player1, player2) = db.get_table_ids(id, table, roundnum=roundnum)
-				db.insert('deckchecks', [player1, seat, id, roundnum])
-				db.insert('deckchecks', [player2, seat, id, roundnum])
+				if remove:
+					db.deleteRow('deckchecks', {'playerid':player1, 'teamplayer':seat, 'tournamentid':id, 'round':roundnum})
+					db.deleteRow('deckchecks', {'playerid':player2, 'teamplayer':seat, 'tournamentid':id, 'round':roundnum})
+				else:
+					db.insert('deckchecks', [player1, seat, id, roundnum])
+					db.insert('deckchecks', [player2, seat, id, roundnum])
 
-			output.printMessage("Marked table %s as checked in round %s" % (table, roundnum))
+			if remove:
+				output.printMessage("Marked table %s as not checked in round %s" % (table, roundnum))
+			else:
+				output.printMessage("Marked table %s as checked in round %s" % (table, roundnum))
 		except Exception as e:
 			output.printMessage("Failed to lookup table %s: %s" % (table, e))
 	elif player:
@@ -27,7 +34,10 @@ def mark_checked(tournament, table=None, player=None, roundnum=None, seat=0):
 				id = db.getEventId(tournament)
 				playerid = db.get_player_id(id, player)
 				round = db.get_round(id)
-				db.insert('deckchecks', [playerid, seat, id, round])
+				if remove:
+					db.deleteRow('deckchecks', {'playerid':playerid, 'teamplayer':seat, 'tournamentid':id, 'round':roundnum})
+				else:
+					db.insert('deckchecks', [playerid, seat, id, round])
 			output.printMessage("Marked player %s as checked in round %s" % (player, round))
 		except Exception as e:
 			output.printMessage("Failed to lookup player %s: %s" % (player, e))
@@ -49,13 +59,13 @@ def docgi():
 	if not check_login(output, form['event'].value, form['password'].value if 'password' in form else '', 'deckcheck'):
 		return
 	if "table" in form and form['table']:
-		mark_checked(form["event"].value, table=int(form["table"].value), seat=int(form["seat"].value) if 'seat' in form else 0)
+		mark_checked(form["event"].value, table=int(form["table"].value), seat=int(form["seat"].value) if 'seat' in form else 0, remove=form["remove"] if 'remove' in form else False, roundnum=form['round'].value if 'round' in form else None)
 		print """<script language="JavaScript" type="text/javascript"><!--
 		setTimeout("window.history.go(-1)",3000);
 		//--></script>"""
 
 	elif 'player' in form and form['player']:
-		mark_checked(form["event"].value, player=form["player"].value, seat=int(form["seat"].value) if 'seat' in form else 0)
+		mark_checked(form["event"].value, player=form["player"].value, seat=int(form["seat"].value) if 'seat' in form else 0, remove=form["remove"] if 'remove' in form else False, roundnum=form['round'].value if 'round' in form else None)
 		print """<script language="JavaScript" type="text/javascript"><!--
 		setTimeout("window.history.go(-2)",5000);
 		//--></script>"""

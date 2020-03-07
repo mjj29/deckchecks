@@ -28,7 +28,7 @@ def allchecks(tournament, form):
 					for name in names:
 						players = db.get_players(id, name)
 						for p in players:
-							output.printPlayer(p, db, id, form)
+							output.printPlayer(p, db, id, form, newbutton=('deckcheck', {'player':p[0], 'remove':'True', 'round':rn}, 'Remove check'))
 
 	except Exception as e:
 		output.printMessage("Failed to print check history: %s" % (e))

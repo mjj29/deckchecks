@@ -29,7 +29,7 @@ class Output:
 		pass
 
 class TextOutput(Output):
-	def printPlayer(self, player, db, eventid, form):
+	def printPlayer(self, player, db, eventid, form, newbutton=None):
 		(name, score, table, build) = player
 		if 0 == build:
 			print "%s (%s points, tables %s) had byes" % (name, score, table)
@@ -71,7 +71,7 @@ class TSVTable:
 class TSVOutput(Output):
 	def table(self, *args):
 		return TSVTable(*args)
-	def printPlayer(self, player, db, eventid, form):
+	def printPlayer(self, player, db, eventid, form, newbutton=None):
 		(name, score, tables, build) = player
 		if 0 == build: build = "Bye"
 
@@ -119,7 +119,7 @@ class HTMLTable:
 class HTMLOutput(Output):
 	def table(self, *args):
 		return HTMLTable(*args)
-	def printPlayer(self, player, db, eventid, form):
+	def printPlayer(self, player, db, eventid, form, newbutton=None):
 		(name, score, tables, build) = player
 		if 0 == build: build = "Bye"
 		tablelinks = ""
@@ -148,6 +148,11 @@ class HTMLOutput(Output):
 			self.createButton(form, 'deckcheck', {'player':name, 'seat':'2'}, 'Check Seat C')
 		else:
 			self.createButton(form, 'deckcheck', {'player':name}, 'Check this player')
+
+		if newbutton:
+			print "</td><td>"
+			(table, options, text) = newbutton
+			self.createButton(form, table, options, text)
 		print "</td></tr>"
 
 	def heading(self, text):
