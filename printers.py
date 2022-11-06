@@ -1,4 +1,4 @@
-import re
+import re, json
 from cfb import CFBTournament
 
 class NullTable:
@@ -27,6 +27,35 @@ class Output:
 		return text
 	def createButton(self, form, link, data, text):
 		pass
+
+class JSONOutput:
+	def __init__(self):
+		self.data = "{}"
+	def __enter__(self):
+		return self
+	def __exit__(self, exception_type, exception_value, traceback):
+		print "Content-type: text/html"
+		print ""
+		if exception_type:
+			print '{"exception":"'+str(exception_value)+'"}'
+		else:
+			print self.data
+		return True
+	def getHeaders(self, maxrounds):
+		return []
+	def pageHeader(self, tournament, round, form):
+		pass
+	def table(self, *args):
+		return NullTable()
+	def printLink(self, form, link, text):
+		return self.makeLink(form, link, text)
+	def makeLink(self, form, link, text):
+		return text
+	def createButton(self, form, link, data, text):
+		pass
+	def sendjson(self, obj):
+		self.data = json.dumps(obj)
+
 
 class TextOutput(Output):
 	def printPlayer(self, player, db, eventid, form, newbutton=None):

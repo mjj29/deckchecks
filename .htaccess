@@ -1,8 +1,9 @@
 AddHandler cgi-script .py
 Options +ExecCGI
 DirectoryIndex index.py
-Redirect /projects.git/mtg/deckchecks/ http://deckchecks.matthew.ath.cx/
+Redirect /projects.git/mtg/deckchecks/ http://deckcheck.me/
 
 RewriteEngine On
 RewriteRule (.*)/style.css$ /style.css [L]
-RewriteRule (.*)/(.*)$ /$2.py?event=$1 [L,QSA]
+RewriteRule ^([^/]*)/(.*)/([^/]*)$ /$2.py?event=$1&arg=$3 [L,QSA]
+#RewriteRule ^([^/]*)/([^/]*)$ /$2.py?event=$1 [L,QSA]

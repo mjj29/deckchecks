@@ -1,0 +1,36 @@
+Data APIs:
+
+Pairings(round) -> {"round", "pairings":[{table, players: [{name, score, checks}]}]}
+/1/rest/pairings/2
+
+Table(number) -> {"number", "table":[{round, players: [{name, score, checks}]}]}
+/1/rest/table/2
+
+Player(name) -> [{"name", score, "buildtable", tables:[1,2,3,4], checks:[3], listid}]
+/1/rest/player/Abey
+
+Top -> {"top":[{table, livestatus, players: [{score, name, checks}]}]}
+/1/rest/top/
+
+Recommend -> {"recommendations":[{table, players: [{score, name, checks}]}],
+		"random":[{table, players: [{score, name, checks}]}]}
+/1/rest/recommend/
+
+Checks -> {"totalchecked", "checks":[{round, players: [name]}]}
+/1/rest/checks/
+
+
+MissingLists -> {"missing":[{player, table}], "extra":[player]}
+/1/rest/missing/
+
+Lists -> {"lists":[{player, uuid}]}
+/1/rest/lists/
+
+List(uuid) -> {"main":[card], "side":[card]}
+/1/rest/list/abcdef1234567890abcdef1234567890
+
+Update
+/1/rest/update
+
+Settings -> {"name", "rounds", "pairings", "decklists", "team", "format"}
+/1/rest/settings/
