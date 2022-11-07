@@ -1,6 +1,6 @@
 export interface ISettings {
 	name: string,
-	rounds: int,
+	rounds: bigint,
 	pairings: boolean,
 	decklists: boolean,
 	team: boolean,

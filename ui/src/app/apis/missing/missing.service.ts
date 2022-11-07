@@ -14,7 +14,7 @@ export class MissingService {
 
         private _url: string = "/rest/missing/";
 
-        getMissing(event: int): Observable<IMissing> {
+        getMissing(event: bigint): Observable<IMissing> {
                 return this.http.get<IMissing>("/"+event+this._url).pipe(catchError(this.errorHandler));
         }
 

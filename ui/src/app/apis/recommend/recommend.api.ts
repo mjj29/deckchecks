@@ -1,13 +1,13 @@
 export interface IRecommendPlayer {
 	name: string,
-	score: int,
-	checks: List<int>
+	score: bigint,
+	checks: Array<bigint>
 }
 export interface IRecommend {
-	table: int,
-	players: List<IRecommendPlayer>
+	table: bigint,
+	players: Array<IRecommendPlayer>
 }
-export interface IRecommonds {
-	recommendations: List<IRecommend>,
-	random: List<IRecommend>
+export interface IRecommends {
+	recommendations: Array<IRecommend>,
+	random: Array<IRecommend>
 }

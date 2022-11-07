@@ -14,7 +14,7 @@ export class RecommendsService {
 
         private _url: string = "/rest/recommend/";
 
-        getRecommends(event: int): Observable<IRecommends> {
+        getRecommends(event: bigint): Observable<IRecommends> {
                 return this.http.get<IRecommends>("/"+event+this._url).pipe(catchError(this.errorHandler));
         }
 

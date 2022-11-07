@@ -1,5 +1,5 @@
 export interface IList {
 	uuid: string,
-	main: List<string>,
-	side: List<string>
+	main: Array<string>,
+	side: Array<string>
 }

@@ -14,7 +14,7 @@ export class TopService {
 
         private _url: string = "/rest/top/";
 
-        getTop(event: int): Observable<ITop> {
+        getTop(event: bigint): Observable<ITop> {
                 return this.http.get<ITop>("/"+event+this._url).pipe(catchError(this.errorHandler));
         }
 

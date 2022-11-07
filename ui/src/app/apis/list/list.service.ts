@@ -14,7 +14,7 @@ export class ListService {
 
         private _url: string = "/rest/list/";
 
-        getList(event: int, uuid: string): Observable<IPairings> {
+        getList(event: bigint, uuid: string): Observable<IList> {
                 return this.http.get<IList>("/"+event+this._url+uuid).pipe(catchError(this.errorHandler));
         }
 

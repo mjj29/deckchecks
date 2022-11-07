@@ -3,5 +3,5 @@ export interface IListUuid {
 	uuid: string
 }
 export interface ILists {
-	pairings: List<IListUuid>
+	pairings: Array<IListUuid>
 }

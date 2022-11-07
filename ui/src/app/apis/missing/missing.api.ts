@@ -1,8 +1,8 @@
 export interface IMissingPlayer {
 	player: string,
-	table: int
+	table: bigint
 }
 export interface IMissing {
-	missing: List<IMissingPlayer>,
-	extra: List<string>
+	missing: Array<IMissingPlayer>,
+	extra: Array<string>
 }

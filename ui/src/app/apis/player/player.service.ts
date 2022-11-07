@@ -14,7 +14,7 @@ export class PlayerService {
 
         private _url: string = "/rest/player/";
 
-        getPlayer(event: int, namefrag: string): Observable<IPlayers> {
+        getPlayer(event: bigint, namefrag: string): Observable<IPlayers> {
                 return this.http.get<IPlayers>("/"+event+this._url+namefrag).pipe(catchError(this.errorHandler));
         }
 

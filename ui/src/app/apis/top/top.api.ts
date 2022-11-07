@@ -1,13 +1,13 @@
 export interface ITopPlayer {
 	name: string,
-	score: int,
-	checks: List<int>
+	score: bigint,
+	checks: Array<bigint>
 }
 export interface ITopTable {
-	table: int,
+	table: bigint,
 	livestatus: string,
-	players: List<ITopPlayer>
+	players: Array<ITopPlayer>
 }
 export interface ITop {
-	top: List<ITopTable>
+	top: Array<ITopTable>
 }

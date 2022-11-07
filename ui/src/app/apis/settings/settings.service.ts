@@ -14,7 +14,7 @@ export class SettingsService {
 
         private _url: string = "/rest/settings/";
 
-        getSettings(event: int): Observable<ISettings> {
+        getSettings(event: bigint): Observable<ISettings> {
                 return this.http.get<ISettings>("/"+event+this._url).pipe(catchError(this.errorHandler));
         }
 

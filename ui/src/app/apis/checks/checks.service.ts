@@ -14,7 +14,7 @@ export class ChecksService {
 
         private _url: string = "/rest/checks/";
 
-        getChecks(event: int): Observable<IChecks> {
+        getChecks(event: bigint): Observable<IChecks> {
                 return this.http.get<IChecks>("/"+event+this._url).pipe(catchError(this.errorHandler));
         }
 

@@ -1,11 +1,11 @@
 export interface IPlayer {
-	tables: List<string>,
+	tables: Array<string>,
 	name: string,
-	buildtable: int,
+	buildtable: bigint,
 	listid: string,
-	score: int,
-	checks: List<int>
+	score: bigint,
+	checks: Array<bigint>
 }
 export interface IPlayers {
-	player: List<IPlayer>
+	player: Array<IPlayer>
 }

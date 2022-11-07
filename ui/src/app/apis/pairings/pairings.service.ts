@@ -14,7 +14,7 @@ export class PairingsService {
 
         private _url: string = "/rest/pairings/";
 
-        getPairings(event: int, round: int): Observable<IPairings> {
+        getPairings(event: bigint, round: bigint): Observable<IPairings> {
                 return this.http.get<IPairings>("/"+event+this._url+round).pipe(catchError(this.errorHandler));
         }
 

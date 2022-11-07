@@ -1,13 +1,13 @@
-export interface IPairingPlayer {
+export interface ITablePlayer {
 	name: string,
-	score: int,
-	checks: List<int>
+	score: bigint,
+	checks: Array<bigint>
 }
 export interface ITableRound {
-	round: int,
-	players: List<ITablePlayer>
+	round: bigint,
+	players: Array<ITablePlayer>
 }
 export interface ITable {
-	number: int,
-	table: List<ITableRound>
+	number: bigint,
+	table: Array<ITableRound>
 }

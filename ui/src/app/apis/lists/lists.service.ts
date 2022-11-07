@@ -14,7 +14,7 @@ export class ListsService {
 
         private _url: string = "/rest/lists/";
 
-        getLists(event: int): Observable<ILists> {
+        getLists(event: bigint): Observable<ILists> {
                 return this.http.get<ILists>("/"+event+this._url).pipe(catchError(this.errorHandler));
         }
 

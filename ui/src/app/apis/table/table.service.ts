@@ -14,7 +14,7 @@ export class TableService {
 
         private _url: string = "/rest/table/";
 
-        getTable(event: int, table: int): Observable<ITable> {
+        getTable(event: bigint, table: bigint): Observable<ITable> {
                 return this.http.get<ITable>("/"+event+this._url+table).pipe(catchError(this.errorHandler));
         }
 
