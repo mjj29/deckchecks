@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+
+// services
 import { PairingsService } from './apis/pairings/pairings.service';
 import { ChecksService } from './apis/checks/checks.service';
 import { ListService } from './apis/list/list.service';
@@ -11,11 +13,14 @@ import { SettingsService } from './apis/settings/settings.service';
 import { TableService } from './apis/table/table.service';
 import { TopService } from './apis/top/top.service';
 
+// components
 import { AppComponent } from './app.component';
+import { PairingsComponent } from './components/pairings/pairings.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    PairingsComponent
   ],
   imports: [
     BrowserModule
@@ -32,6 +37,9 @@ import { AppComponent } from './app.component';
 	  TableService,
 	  TopService
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [
+	  AppComponent,
+	  PairingsService
+  ]
 })
 export class AppModule { }
