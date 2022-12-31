@@ -1,2 +1,20 @@
-<h1>Deckchecks</h1>
-<app-pairings></app-pairings>
+<h1>Deckchecks {{event}}</h1>
+<mat-toolbar>
+	<button mat-button (click)="togglePanel(tablePanel)">Table</button>
+	<button mat-button (click)="togglePanel(pairingsPanel)">Pairings</button>
+	<button mat-button (click)="togglePanel(checksPanel)">Checks</button>
+</mat-toolbar>
+<mat-expansion-panel [hideToggle]="true" #tablePanel>
+Table...
+</mat-expansion-panel>
+<mat-expansion-panel [hideToggle]="true" #pairingsPanel>
+<ng-container *ngIf="pairings$ | async as pairings; else loading">
+<app-pairings [pairings]="pairings" [event]="event" [round]="round"></app-pairings>
+</ng-container>
+</mat-expansion-panel>
+<mat-expansion-panel [hideToggle]="true" #checksPanel>
+Checks...
+</mat-expansion-panel>
+<ng-template #loading>
+	<div>Loading...</div>
+</ng-template>

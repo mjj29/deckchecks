@@ -1,12 +1,12 @@
 export interface IPairingPlayer {
 	name: string,
-	score: bigint
+	score: number
 }
 export interface IPairing {
-	table: bigint,
+	table: number,
 	players: Array<IPairingPlayer>
 }
 export interface IPairings {
-	round: bigint,
+	round: number,
 	pairings: Array<IPairing>
 }

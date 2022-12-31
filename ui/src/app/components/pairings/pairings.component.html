@@ -1,1 +1,23 @@
 <h2>Pairings</h2>
+<h3>Round {{pairings.round}}</h3>
+<table>
+	<thead>
+		<tr>
+			<th>Table #</th>
+			<ng-container *ngFor="let index of indexes">
+				<th>Player {{index}}</th>
+				<th>Score</th>
+			</ng-container>
+		</tr>
+	</thead>
+	<tbody>
+		<tr *ngFor="let pairing of pairings.pairings">
+			<td>{{pairing.table}}</td>
+			<ng-container *ngFor="let player of pairing.players">
+				<td>{{player.name}}</td>
+				<td>{{player.score}}</td>
+			</ng-container>
+		</tr>
+	</tbody>
+</table>
+
