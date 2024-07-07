@@ -11,7 +11,7 @@ def calculateTop8Threshold(playersPerBye, totalRounds, currentRound):
 
 	maxOutstandingPoints = 3*(totalRounds-currentRound)
 
-	html = urllib2.urlopen(SWISSCUT+'?players=%s&rounds=%s&cut=8' % (effectivePlayers, totalRounds))
+	html = urllib2.urlopen(SWISSCUT+'?players=%s&rounds=%s&cut=%s' % (effectivePlayers, totalRounds, 8 if effectivePlayers >= 8 else effectivePlayers/2))
 	soup = bs4.BeautifulSoup(html)
 	records = soup.find('ul', class_='').find_all("li")
 	worst_record=records[-1].find('strong').get_text()

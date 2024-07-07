@@ -15,7 +15,7 @@ class DeckDB:
 	schema = {
 		'pairings':['playerid', 'round', 'score', 'tablenum', 'tournamentid'],
 		'seatings':['playerid', 'buildtable', 'tournamentid'],
-		'players':['name', 'country', 'tournamentid'],
+		'players':['name', 'country', 'tournamentid', 'decklistid'],
 		'deckchecks':['playerid', 'teamplayer', 'tournamentid', 'round'],
 		'round':['roundnum', 'tournamentid'],
 		'tournaments':['name', 'url', 'rounds', 'password', 'pairings', 'team', 'decklisturl'],
@@ -220,7 +220,7 @@ ORDER BY lname
 
 		with DeckCursor(self.db.cursor()) as cur:
 			cur.execute("""
-SELECT players.playerid, name, score, buildtable 
+SELECT players.playerid, name, score, buildtable, decklistid 
 FROM players INNER JOIN seatings 
 	ON players.playerid=seatings.playerid 
 INNER JOIN pairings 
@@ -237,7 +237,7 @@ WHERE players.tournamentid=%s
 				try:
 					prevtables = self.get_prev_tables(tournamentid, r[0])
 					l = tables.get(prevtables[-1], list())
-					l.append((r[1], r[2], prevtables, r[3]))
+					l.append((r[1], r[2], prevtables, r[3], r[4]))
 					tables[prevtables[-1]] = l
 				except:
 					pass
@@ -255,9 +255,9 @@ WHERE players.tournamentid=%s
 
 	def get_build_table(self, tournamentid, tablenum):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT players.playerid, name, MAX(score), buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE buildtable=%s AND players.tournamentid=%s GROUP BY name, buildtable", (tablenum, tournamentid))
+			cur.execute("SELECT players.playerid, name, MAX(score), buildtable, decklistid FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE buildtable=%s AND players.tournamentid=%s GROUP BY name, buildtable", (tablenum, tournamentid))
 			rows = cur.fetchall()
-			return [(r[1], r[2], self.get_prev_tables(tournamentid, r[0]), r[3]) for r in rows]
+			return [(r[1], r[2], self.get_prev_tables(tournamentid, r[0]), r[3], r[4]) for r in rows]
 
 
 	def hasSeating(self, tournamentid):
@@ -269,9 +269,9 @@ WHERE players.tournamentid=%s
 	def get_table(self, tournamentid, tablenum, roundnum=None):
 		roundnum = roundnum or self.get_round(tournamentid)
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT players.playerid, name, score, buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE tablenum=%s AND players.tournamentid=%s AND pairings.round=%s", (tablenum, tournamentid, roundnum))
+			cur.execute("SELECT players.playerid, name, score, buildtable, decklistid FROM players INNER JOIN seatings ON players.playerid=seatings.playerid INNER JOIN pairings ON players.playerid=pairings.playerid WHERE tablenum=%s AND players.tournamentid=%s AND pairings.round=%s", (tablenum, tournamentid, roundnum))
 			rows = cur.fetchall()
-			return ((rows[0][1], rows[0][2], self.get_prev_tables(tournamentid, rows[0][0]), rows[0][3]), (rows[1][1], rows[1][2], self.get_prev_tables(tournamentid, rows[1][0]), rows[1][3]))
+			return ((rows[0][1], rows[0][2], self.get_prev_tables(tournamentid, rows[0][0]), rows[0][3], rows[0][4]), (rows[1][1], rows[1][2], self.get_prev_tables(tournamentid, rows[1][0]), rows[1][3], rows[1][4]))
 
 	def get_table_ids(self, tournamentid, tablenum, roundnum=None):
 		roundnum = roundnum or self.get_round(tournamentid)
@@ -312,9 +312,9 @@ WHERE players.tournamentid=%s
 
 	def get_players(self, tournamentid, name):
 		with DeckCursor(self.db.cursor()) as cur:
-			cur.execute("SELECT players.playerid, name, MAX(score), buildtable FROM players INNER JOIN seatings ON players.playerid=seatings.playerid LEFT OUTER JOIN pairings ON players.playerid=pairings.playerid WHERE name COLLATE LATIN1_GENERAL_CI  LIKE %s AND players.tournamentid=%s GROUP BY name", ('%'+name+'%', tournamentid))
+			cur.execute("SELECT players.playerid, name, MAX(score), buildtable, decklistid FROM players INNER JOIN seatings ON players.playerid=seatings.playerid LEFT OUTER JOIN pairings ON players.playerid=pairings.playerid WHERE name COLLATE LATIN1_GENERAL_CI  LIKE %s AND players.tournamentid=%s GROUP BY name", ('%'+name+'%', tournamentid))
 			rows = cur.fetchall()
-		return [(row[1], row[2], self.get_prev_tables(tournamentid, row[0]), row[3]) for row in rows]
+		return [(row[1], row[2], self.get_prev_tables(tournamentid, row[0]), row[3], row[4]) for row in rows]
 
 	def getPreviousChecks(self, tournamentid, name):
 		with DeckCursor(self.db.cursor()) as cur:

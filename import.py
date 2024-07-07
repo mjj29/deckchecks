@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from deck_mysql import DeckDB 
 from printers import HTMLOutput, TextOutput
-import csv, sys, os, cgi, cgitb, urllib2, bs4, subprocess, re
+import csv, sys, os, cgi, cgitb, urllib2, bs4, subprocess, re, json
 from login import check_login
 import xml.etree.ElementTree as ET
 from cfb import CFBTournament
@@ -10,12 +10,12 @@ output = None
 
 def insertSeating(db, eventid, table, player):
 
-	(name, country, score) = player
+	(name, country, score, decklistid) = player
 	name = re.sub(r'[^\x00-\x7f]',r'', name) 
 	try:
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	except:
-		db.insert('players', (name, country, eventid))
+		db.insert('players', (name, country, eventid, decklistid))
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	try:
 		db.insert('seatings', (idn, table, eventid))
@@ -27,13 +27,13 @@ def insertSeating(db, eventid, table, player):
 
 
 def insertPairing(db, eventid, roundnum, table, player):
-	(name, country, score) = player
+	(name, country, score, decklistid) = player
 	name = re.sub(r'[^\x00-\x7f]',r'', name) 
 	try:
 		idn = db.find('players', {"name":name, 'tournamentid':eventid})[0]
 	except Exception as e:
 		try:
-			db.insert('players', (name, country, eventid))
+			db.insert('players', (name, country, eventid, decklistid))
 			idn = db.find('players', {'name':name, 'tournamentid':eventid})[0]
 			if int(roundnum) == 1:
 				output.printMessage("Adding player to seatings at table %s" % table)
@@ -49,13 +49,21 @@ def insertPairing(db, eventid, roundnum, table, player):
 	except:
 		pass
 
-def parseSeatingRow(row):
-	table = row[0]
-	name = row[1].strip()
-	country = ""
-	score = 0
+def parseSeatingRow(row, mode):
+	if mode=='MELEE':
+		table = row[9]
+		name = row[20]
+		country = ""
+		score = 0
+		decklistid = ""
+	else:
+		table = row[0]
+		name = row[1].strip()
+		country = ""
+		score = 0
+		decklistid=''
 
-	return (table, (name, country, score), None)
+	return (table, (name, country, score, decklistid), None)
 	
 def importAllDataURL(event, pairingsurl, clear):
 	output.printMessage("Loading data from %s" % pairingsurl)
@@ -200,11 +208,11 @@ def importAllDataURL(event, pairingsurl, clear):
 		else:
 			raise Exception("Unknown pairings site: %s" % pairingsurl)
 
-def parseRow(row, wltr):
+def parseRow(row, mode):
 	# wltr = "Table","Player 1","Country","Points","Player 2","Country","Points"
 	# wltr teams = "Table","Player 1","Points","Player 2","Points"
 	# pairings.cfb = Table	Player 1	Score	Player2
-	if wltr:
+	if mode=='WLTR':
 		if "-" == row[0]:
 			name1 = row[1].strip()
 			country1 = row[2]
@@ -212,7 +220,7 @@ def parseRow(row, wltr):
 				score1 = int(row[3])
 			except:
 				score1 = 0
-			return (0, (name1, country1, score1), None)
+			return (0, (name1, country1, score1, ''), None)
 		else:
 			table = int(row[0])
 			name1 = row[1].strip()
@@ -229,9 +237,29 @@ def parseRow(row, wltr):
 				except:
 					score2 = 0
 
-				return (table, (name1, country1, score1), (name2, country2, score2))
+				return (table, (name1, country1, score1, ''), (name2, country2, score2, ''))
 			except Exception as e:
-				return (table, (name1, country1, score1), None)
+				return (table, (name1, country1, score1, ''), None)
+	elif mode=='MELEE':
+		table = row[43]
+		name1 = row[14]
+		deckid1 = row[64]
+		country1 = ""
+		score1 = 0
+		try: score1 = int(row[27]) # Competitors1GameWins?
+		except: pass
+		output.printMessage("player1="+str((name1, country1, score1, deckid1)))
+		try:
+			name2 = row[44]
+			country2 = ""
+			score2 = 0
+			try: score2 = int(row[95]) # Competitors2GameWins?
+			except: pass
+			deckid2 = row[98]
+			output.printMessage("player2="+str((name2, country2, score2, deckid2)))
+			return (table, (name1, country1, score1, deckid1), (name2, country2, score2, deckid2))
+		except Exception as e:
+			return (table, (name1, country1, score1, deckid1), None)
 	else:
 		table = row[0]
 		name1 = row[1].strip()
@@ -241,11 +269,32 @@ def parseRow(row, wltr):
 			name2 = row[3].strip()
 			country2 = ""
 			score2 = row[2]
-			return (table, (name1, country1, score1), (name2, country2, score2))
+			return (table, (name1, country1, score1, ''), (name2, country2, score2, ''))
 		except Exception as e:
-			return (table, (name1, country1, score1), None)
+			return (table, (name1, country1, score1, ''), None)
 
-def import_seatings_reader(event, reader, clear):
+def import_melee_json_seatings(event, clear, seatData):
+	output.printMessage("Importing Melee-format JSON")
+	seats = json.loads(seatData)
+	count = 0
+	with DeckDB() as db:
+		id = db.getEventId(event)
+		if clear:
+			output.printMessage("Deleting previous data");
+			db.deleteRow('pairings', {'tournamentid':id})
+			db.deleteRow('seatings', {'tournamentid':id})
+			db.deleteRow('players', {'tournamentid':id})
+		for s in seats:
+			table = s['TableNumber']
+			name = s['Name']
+			count = count + 1
+			output.printMessage("Adding Table "+str(table)+": "+name)
+			insertSeating(db, id, table, (name, '', 0, ''))
+	output.printMessage("Imported %d seatings" % count)
+
+
+
+def import_seatings_reader(event, reader, clear, mode):
 	count = 0
 	with DeckDB() as db:
 		id = db.getEventId(event)
@@ -257,9 +306,9 @@ def import_seatings_reader(event, reader, clear):
 		for row in reader:
 			print str(row)
 			output.printMessage("%s"%row)
-			if len(row) == 0: continue
+			if len(row) == 0 or 'DateCreated' in row[0]: continue
 			try:
-				(table, player1, player2) = parseSeatingRow(row)
+				(table, player1, player2) = parseSeatingRow(row, mode)
 				count = count + 1
 			except Exception as e:
 				output.printMessage("Failed to import row %s: %s" % (row, e))
@@ -276,7 +325,7 @@ def import_seatings_reader(event, reader, clear):
 					output.printMessage("Failed to import row %s: %s" % (row, e))
 	output.printMessage("Imported %d seatings" % count)
 
-def import_pairings_reader(event, reader, clear, roundnum, wltr):
+def import_pairings_reader(event, reader, clear, roundnum, mode):
 	count = 0
 	with DeckDB() as db:
 		try:
@@ -289,24 +338,71 @@ def import_pairings_reader(event, reader, clear, roundnum, wltr):
 			output.printMessage("Deleting previous data");
 			db.deleteRow('pairings', {'tournamentid':id, 'round':roundnum})
 		for row in reader:
-			if len(row) == 0: continue
+			if len(row) == 0 or 'Competitors1TeamPlayers1TeamId' in row[0]: continue
 			try:
-				(table, player1, player2) = parseRow(row, wltr)
+				(table, player1, player2) = parseRow(row, mode)
 				count = count + 1
 			except Exception as e:
 				output.printMessage("Failed to import row %s: %s" % (row, e))
+				raise
 				continue
 
 			try:
 				insertPairing(db, id, roundnum, table, player1)
 			except Exception as e:
 				output.printMessage("Failed to import row %s: %s" % (row, e))
-			if False:
+				raise
+			if mode=='MELEE' and player2:
 				try:
 					insertPairing(db, id, roundnum, table, player2)
 				except Exception as e:
 					output.printMessage("Failed to import row %s: %s" % (row, e))
+					raise
 	output.printMessage("Imported %d pairings" % count)
+
+def import_melee_json_pairings(event, roundnum, clear, matchData, standingsData):
+	output.printMessage("Importing Melee-format JSON")
+	matches = json.loads(matchData)
+	points = {}
+	if standingsData:
+		for s in json.loads(standingsData):
+			points[s['Team']['Players'][0]['ID']]=s['Points']
+	else:
+		output.printMessage("WARNING: No standings data so cannot import current scores for top-cut calculations. If this is not round 1, re-run with standings at the end of the previous round added as well")
+	count = 0
+	with DeckDB() as db:
+		id = db.getEventId(event)
+		try:
+			db.deleteRow('round', {'tournamentid':id})
+			db.insert('round', [roundnum, id])
+		except Exception as e:
+			output.printMessage("Failed to update current round number: %s" % e)
+		if clear:
+			output.printMessage("Deleting previous data");
+			db.deleteRow('pairings', {'tournamentid':id, 'round':roundnum})
+		for m in matches:
+			table = m['TableNumber']
+			name1 = m['Competitors'][0]['Team']['Players'][0]['Name']
+			score1 = points.get(m['Competitors'][0]['Team']['Players'][0]['ID'], 0)
+			decklistid1 = ''
+			if len(m['Competitors'][0]['Decklists'])>0:
+				decklistid1 = m['Competitors'][0]['Decklists'][0]['DecklistId']
+			player1=(name1,'',score1,decklistid1)
+			insertPairing(db, id, roundnum, table, player1)
+			name2="Bye"
+			if len(m['Competitors'])>1:
+				name2 = m['Competitors'][1]['Team']['Players'][0]['Name']
+				score2 = points.get(m['Competitors'][1]['Team']['Players'][0]['ID'], 0)
+				decklistid2 = ''
+				if len(m['Competitors'][1]['Decklists'])>0:
+					decklistid2 = m['Competitors'][1]['Decklists'][0]['DecklistId']
+				player2=(name2,'',score2,decklistid2)
+				insertPairing(db, id, roundnum, table, player2)
+			count = count + 1
+			output.printMessage("Adding Table "+str(table)+": "+name1+" vs "+name2)
+	output.printMessage("Imported %d pairings" % count)
+
+
 
 def import_seatings_file(event, seatingsFile, clear):
 
@@ -429,21 +525,30 @@ def import_pairings_file(event, pairingsFile, clear, roundnum):
 		data = f.read()
 	import_pairings_data(event, data, clear, roundnum)
 
-def import_seatings_data(event, seatData, clear):
+def import_seatings_data(event, seatData, clear, meleejson):
+	if meleejson:
+		import_melee_json_seatings(event, clear, seatData)
+		return
+	mode='STANDARD'
 	if seatData.startswith('%PDF'):
 		output.printMessage("Importing as PDF")
 		import_round_pdf(event, seatData, clear, 0, seatings=True)
+		return
 	elif '\t' in seatData:
 		output.printMessage("Importing as tab-separated")
 		reader = csv.reader(seatData.split('\n'), delimiter='\t')
-		import_seatings_reader(event, reader, clear)
 	else:
 		output.printMessage("Importing as comma-separated")
 		reader = csv.reader(seatData.split('\n'))
-		import_seatings_reader(event, reader, clear)
+	if 'DisplayNameLastFirst' in seatData: mode='MELEE'
+	import_seatings_reader(event, reader, clear, mode)
 
 
-def import_pairings_data(event, pairingData, clear, roundnum):
+def import_pairings_data(event, pairingData, clear, roundnum, standings, meleejson):
+	if meleejson:
+		import_melee_json_pairings(event, roundnum, clear, pairingData, standings)
+		return
+	mode='STANDARD'
 	if pairingData.startswith('<'):
 		output.printMessage("Importing as XML")
 		import_all_xml(event, pairingData, clear)
@@ -455,14 +560,14 @@ def import_pairings_data(event, pairingData, clear, roundnum):
 	elif '\t' in pairingData:
 		output.printMessage("Importing as tab-separated")
 		reader = csv.reader(pairingData.split('\n'), delimiter='\t')
-		wltr=False
 	else:
 		output.printMessage("Importing as comma-separated")
 		reader = csv.reader(pairingData.split('\n'))
-		wltr = 'Country' in pairingData.split('\n')[0]
-	import_pairings_reader(event, reader, clear, roundnum, wltr)
+	if 'Country' in pairingData.split('\n')[0]: mode='WLTR'
+	if 'Competitors1TeamPlayers1TeamId' in pairingData: mode='MELEE'
+	import_pairings_reader(event, reader, clear, roundnum, mode)
 
-def import_data(event, dtype, data, clear, roundnum):
+def import_data(event, dtype, data, clear, roundnum, standings=None, meleejson=False):
 	if 'Wizards Event Reporter' in data:
 		d = []
 		for l in data.split('\n'):
@@ -470,9 +575,9 @@ def import_data(event, dtype, data, clear, roundnum):
 			d.append(l)
 		data = '\n'.join(d)
 	if "seatings" == dtype:
-		import_seatings_data(event, data, clear)
+		import_seatings_data(event, data, clear, meleejson)
 	elif "pairings" == dtype:
-		import_pairings_data(event, data, clear, roundnum)
+		import_pairings_data(event, data, clear, roundnum, standings, meleejson)
 	else:
 		output.printMessage("Unknown data type %s" % dtype)
 
@@ -503,6 +608,10 @@ def docgi():
 		roundnum = 0
 	if 'datafile' in form and form['datafile'].value:
 		import_data(form["event"].value, form["type"].value, form['datafile'].file.read(), clear, roundnum)
+	elif 'meleeseatings' in form and form['meleeseatings'].value and form['type'].value=='seatings':
+		import_data(form["event"].value, form["type"].value, form['meleeseatings'].file.read(), clear, roundnum, meleejson=True)
+	elif 'meleematches' in form and form['meleematches'].value and form['type'].value=='pairings':
+		import_data(form["event"].value, form["type"].value, form['meleematches'].file.read(), clear, roundnum, standings=form['meleestandings'].file.read() if 'meleestandings' in form and form['meleestandings'].value else None, meleejson=True)
 	elif 'pairingsurl' in form and form['pairingsurl'].value:
 		importAllDataURL(form['event'].value, form['pairingsurl'].value, clear)
 	elif "data" in form:
@@ -526,6 +635,12 @@ def docgi():
 	</select><br/>
 	Clear data: <input type='checkbox' name='clear' value='true' />[if importing seating resets all tournament data including checks]<br/>
 	Import round: <input type='text' name='round' value='%s' /><br/>
+	Import Melee JSON: <br/>
+	<ul>
+	<li><b>Seatings:</b> <input type='file' name='meleeseatings' /></li>
+	<li><b>Matches:</b> <input type='file' name='meleematches' /></li>
+	<li><b>Standings:</b><input type='file' name='meleestandings' /></li>
+	</ul>
 	Import from file: <input type='file' name='datafile' /><br/>
 	<input type='submit' />
 	<textarea name='data' cols='80' rows='20'></textarea><br/>

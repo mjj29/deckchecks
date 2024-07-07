@@ -27,8 +27,8 @@ def top_tables(tournament, form):
 						score = row[0]
 						tablenum = row[1]
 						(player1, player2) = db.get_table(id, tablenum)
-						(name1, score1, _, _) = player1
-						(name2, score2, _, _) = player2
+						(name1, score1, _, _, _) = player1
+						(name2, score2, _, _, _) = player2
 						prevChecks1 = db.getPreviousChecks(id, name1)
 						prevChecks2 = db.getPreviousChecks(id, name2)
 						if (score1 == undefeatedThreshold or score2 == undefeatedThreshold):

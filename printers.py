@@ -120,7 +120,7 @@ class HTMLOutput(Output):
 	def table(self, *args):
 		return HTMLTable(*args)
 	def printPlayer(self, player, db, eventid, form, newbutton=None):
-		(name, score, tables, build) = player
+		(name, score, tables, build, deckid) = player
 		if 0 == build: build = "Bye"
 		tablelinks = ""
 		for t in tables:
@@ -136,11 +136,9 @@ class HTMLOutput(Output):
 		print self.makeLink(form, 'get_player?name=%s'%name, name)
 		print "<td>%s</td>%s<td><b>"%(score, tablelinks)
 		print self.makeLink(form, 'get_table?table=%s'%build, build)
-		if db.getDecklistUrl(eventid):
-			t = CFBTournament({'id':eventid, 'name':'Event', 'pairingsurl':db.getEventUrl(eventid), 'decklist_list_url':db.getDecklistUrl(eventid)})
-			listurl = t.getListURLForPlayer(name)
-			if listurl:
-				print " [<a href='%s'>online</a>]" % listurl
+		listurl = db.getDecklistUrl(eventid)
+		if listurl and deckid:
+			print " [<a href='%s/%s'>online</a>]" % (listurl, deckid)
 		print "</b></td><td>%s</td><td>" % (", ".join([str(x) for x in prevChecks]))
 		if db.isEventTeam(eventid):
 			self.createButton(form, 'deckcheck', {'player':name, 'seat':'0'}, 'Check Seat A')
@@ -193,8 +191,6 @@ class HTMLOutput(Output):
 		print self.makeLink(form, 'allchecks', 'checks')
 		print " | "
 		print self.makeLink(form, 'pairings', 'pairings')
-		print " | "
-		print self.makeLink(form, 'lists', 'lists')
 		print " | "
 		print self.makeLink(form, 'import', 'update')
 		print " | "
