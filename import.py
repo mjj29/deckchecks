@@ -647,6 +647,19 @@ def docgi():
 </form>
 </div>
 <h2>Instructions</h2>
+<h3>Melee</h3>
+<p>
+For a Melee tournament you need to do the following, with downloads from the Melee Tournament Control page.
+</p>
+<h4>Constructed</h4>
+<p>Go to Settings and put http://melee.gg/Decklist/View as the Decklist URL.</p>
+<p>After pairing Round 1, download the JSON for the match data for Round 1, and uploaded it to the "Matches" option</p>
+<p>After pairing subsequent rounds, download the JSON for that round's match data and the Standings for the previous round. Upload them to the "Matches" and "Standings" options respectively</p>
+<h4>Sealed</h4>
+<p>For seatings, download the JSON for the seatings data and upload it to the "Seatings" option, with the data type set to seatings</p>
+<p>After pairing Round 1, download the JSON for the match data for Round 1, and uploaded it to the "Matches" option</p>
+<p>After pairing subsequent rounds, download the JSON for that round's match data and the Standings for the previous round. Upload them to the "Matches" and "Standings" options respectively</p>
+<h3>Old instructions</h3>
 <p>
 The simplest way to import data for a GP or other event on CFB pairings site is just to put the pairings URL into the top form. That will load all data up until this point, assuming R1 pairings are original decklist tables and all byes are sorted alphabetically. For more complex use cases, use the other forms. You can manually important seatings and then use the URL import to load the pairings, as long as you do not use clear.
 </p>
